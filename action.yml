@@ -1,0 +1,31 @@
+name: IssueOps Demo Reservation Action
+description: Process reservation requests for a fictional business
+author: Nick Alteen
+
+branding:
+  icon: check-square
+  color: blue
+
+inputs:
+  body:
+    description:
+      The issue body to parse. Defaults to the body from the workflow event.
+    required: true
+    default: ${{ github.event.issue.body }}
+  issue-form-template:
+    description: The issue form template file name (e.g. `new-repository.yml`).
+    required: false
+  workspace:
+    default: ${{ github.workspace }}
+    description:
+      The path where the repository has been cloned using the `actions/checkout`
+      step. This is required to find the issue form template file.
+    required: true
+
+outputs:
+  json:
+    description: The parsed issue as a JSON string
+
+runs:
+  using: node20
+  main: dist/index.js
