@@ -27,7 +27,7 @@ export async function run(): Promise<void> {
 
   core.info('Running action with the following inputs:')
   core.info(`  action: ${action}`)
-  core.info(`  issueBody: ${issueBody}`)
+  core.info(`  issueBody: ${JSON.stringify(issueBody, null, 2)}`)
   core.info(`  owner: ${owner}`)
   core.info(`  repository: ${repository}`)
   core.info(`  workspace: ${workspace}`)
