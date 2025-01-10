@@ -7,14 +7,24 @@ branding:
   color: blue
 
 inputs:
-  body:
-    description:
-      The issue body to parse. Defaults to the body from the workflow event.
+  action:
+    description: The action to take (`init`, `submit`, or `cancel`).
     required: true
-    default: ${{ github.event.issue.body }}
-  issue-form-template:
-    description: The issue form template file name (e.g. `new-repository.yml`).
-    required: false
+  issue_body:
+    description:
+      The issue body as a JSON string. This is typically the output of the
+      `issue-ops/parser` action.
+    required: true
+  github_token:
+    description: The GitHub token to use for interacting with the GitHub API.
+    required: true
+    default: ${{ github.token }}
+  repository:
+    description:
+      The repository where the issue was created. This is required to interact
+      with the GitHub API.
+    required: true
+    default: ${{ github.repository }}
   workspace:
     default: ${{ github.workspace }}
     description:

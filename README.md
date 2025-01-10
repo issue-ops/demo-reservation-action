@@ -7,7 +7,9 @@
 ![Continuous Delivery](https://github.com/issue-ops/demo-reservation-action/actions/workflows/continuous-delivery.yml/badge.svg)
 ![Linter](https://github.com/issue-ops/demo-reservation-action/actions/workflows/linter.yml/badge.svg)
 
-Demo action for processing reservation requests for [Bear Creek Honey Farm](https://issue-ops.github.io/bear-creek-honey-farm/), a fictional bed and breakfast.
+Demo action for processing reservation requests for
+[Bear Creek Honey Farm](https://issue-ops.github.io/bear-creek-honey-farm/), a
+fictional bed and breakfast.
 
 ## About
 
