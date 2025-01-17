@@ -42,7 +42,7 @@ export async function cancel(projectNumber: number): Promise<void> {
     owner: github.context.repo.owner,
     repo: github.context.repo.repo,
     issue_number: github.context.payload.issue!.number,
-    body: dedent`### :calendar: Reservation Request Cancelled
+    body: dedent`### :no_entry_sign: Reservation Request Cancelled
 
     Your reservation request has been cancelled! We are sorry that you have chosen to cancel your stay at Bear Creek Honey Farm.
 

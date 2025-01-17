@@ -40,7 +40,7 @@ export async function reserve(
   // Get the list of rooms from the JSON file.
   const __dirname = dirname(fileURLToPath(import.meta.url))
   const rooms = JSON.parse(
-    readFileSync(path.join(__dirname, '..', 'rooms.json'), 'utf8')
+    readFileSync(path.join(__dirname, 'rooms.json'), 'utf8')
   ) as Room[]
 
   core.info('Rooms JSON File:')
@@ -71,7 +71,7 @@ export async function reserve(
       owner: github.context.repo.owner,
       repo: github.context.repo.repo,
       issue_number: github.context.payload.issue!.number,
-      body: dedent`### :calendar: Reservation Request Failed
+      body: dedent`### :fire: Reservation Request Failed
 
       All available rooms of this type have been booked for the selected dates. Please modify your request and try again!`
     })
@@ -101,7 +101,7 @@ export async function reserve(
     owner: github.context.repo.owner,
     repo: github.context.repo.repo,
     issue_number: github.context.payload.issue!.number,
-    body: dedent`### :calendar: Reservation Request Confirmed
+    body: dedent`### :hotel: Reservation Request Confirmed
 
     Hooray! Your reservation request has been confirmed! The total cost of your stay is **${matching[0].price}**. You can submit payment after conclusion of your stay, which will never happen, because this is a demo project.
 

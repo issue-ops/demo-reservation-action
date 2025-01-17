@@ -31447,7 +31447,7 @@ async function cancel(projectNumber) {
         owner: githubExports.context.repo.owner,
         repo: githubExports.context.repo.repo,
         issue_number: githubExports.context.payload.issue.number,
-        body: dedent `### :calendar: Reservation Request Cancelled
+        body: dedent `### :no_entry_sign: Reservation Request Cancelled
 
     Your reservation request has been cancelled! We are sorry that you have chosen to cancel your stay at Bear Creek Honey Farm.
 
@@ -39175,7 +39175,7 @@ async function reserve(reservation, issueTemplateBody, projectNumber) {
     coreExports.info('Getting Rooms');
     // Get the list of rooms from the JSON file.
     const __dirname = dirname(fileURLToPath(import.meta.url));
-    const rooms = JSON.parse(readFileSync(require$$1$5.join(__dirname, '..', 'rooms.json'), 'utf8'));
+    const rooms = JSON.parse(readFileSync(require$$1$5.join(__dirname, 'rooms.json'), 'utf8'));
     coreExports.info('Rooms JSON File:');
     coreExports.info(JSON.stringify(rooms, null, 2));
     // Get the rooms that match the room type from the JSON file.
@@ -39194,7 +39194,7 @@ async function reserve(reservation, issueTemplateBody, projectNumber) {
             owner: githubExports.context.repo.owner,
             repo: githubExports.context.repo.repo,
             issue_number: githubExports.context.payload.issue.number,
-            body: dedent `### :calendar: Reservation Request Failed
+            body: dedent `### :fire: Reservation Request Failed
 
       All available rooms of this type have been booked for the selected dates. Please modify your request and try again!`
         });
@@ -39216,7 +39216,7 @@ async function reserve(reservation, issueTemplateBody, projectNumber) {
         owner: githubExports.context.repo.owner,
         repo: githubExports.context.repo.repo,
         issue_number: githubExports.context.payload.issue.number,
-        body: dedent `### :calendar: Reservation Request Confirmed
+        body: dedent `### :hotel: Reservation Request Confirmed
 
     Hooray! Your reservation request has been confirmed! The total cost of your stay is **${matching[0].price}**. You can submit payment after conclusion of your stay, which will never happen, because this is a demo project.
 
