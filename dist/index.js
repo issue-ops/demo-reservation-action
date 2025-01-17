@@ -39133,7 +39133,7 @@ async function addReaction(content) {
     let response;
     // If there is a comment in the payload, add the reaction to the comment.
     if (githubExports.context.payload.comment !== undefined) {
-        coreExports.info(`Adding Reaction to Comment: #${githubExports.context.payload.comment.number}`);
+        coreExports.info(`Adding Reaction to Comment: #${githubExports.context.payload.comment.id}`);
         response = await octokit.rest.reactions.createForIssueComment({
             owner: githubExports.context.repo.owner,
             repo: githubExports.context.repo.repo,
@@ -39210,7 +39210,7 @@ async function run() {
     const initialReactionId = await addReaction(Reaction.EYES);
     // Parse the issue body into a more usable format. Include the issue template
     // so that the parser can extract additional metadata from the issue.
-    const issueTemplateBody = readFileSync(require$$1$5.join(workspace, issueTemplatePath), 'utf8');
+    const issueTemplateBody = readFileSync(require$$1$5.join(workspace, '.github', 'ISSUE_TEMPLATE', issueTemplatePath), 'utf8');
     const parsedIssueBody = parseIssue(issueBody, issueTemplateBody);
     coreExports.info('Parsed Issue Body:');
     coreExports.info(JSON.stringify(parsedIssueBody, null, 2));

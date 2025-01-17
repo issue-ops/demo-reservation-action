@@ -23,7 +23,7 @@ export async function addReaction(content: Reaction): Promise<number> {
   // If there is a comment in the payload, add the reaction to the comment.
   if (github.context.payload.comment !== undefined) {
     core.info(
-      `Adding Reaction to Comment: #${github.context.payload.comment.number}`
+      `Adding Reaction to Comment: #${github.context.payload.comment.id}`
     )
 
     response = await octokit.rest.reactions.createForIssueComment({

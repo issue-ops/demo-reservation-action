@@ -47,7 +47,7 @@ export async function run(): Promise<void> {
   // Parse the issue body into a more usable format. Include the issue template
   // so that the parser can extract additional metadata from the issue.
   const issueTemplateBody = readFileSync(
-    path.join(workspace, issueTemplatePath),
+    path.join(workspace, '.github', 'ISSUE_TEMPLATE', issueTemplatePath),
     'utf8'
   )
   const parsedIssueBody = parseIssue(issueBody, issueTemplateBody)
