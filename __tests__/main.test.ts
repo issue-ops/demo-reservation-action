@@ -1,100 +1,62 @@
+import type { parseIssue } from '@github/issue-parser'
 import { jest } from '@jest/globals'
-import fs from 'fs'
-import * as core from '../__fixtures__/core.js'
+import * as core from '../__fixtures__/@actions/core.js'
+import * as github from '../__fixtures__/@actions/github.js'
+import * as fs from '../__fixtures__/fs.js'
+import type { reserve } from '../src/actions/reserve.js'
+import { getInputs } from '../src/utils/inputs.js'
+import type { addReaction } from '../src/utils/issues.js'
 
-const issue = fs.readFileSync('__fixtures__/example/issue.md', 'utf-8')
-const parsedIssueWithTemplate = JSON.parse(
-  fs.readFileSync(
-    '__fixtures__/example/parsed-issue-with-template.json',
-    'utf-8'
-  )
-)
-const parsedIssueNoTemplate = JSON.parse(
-  fs.readFileSync('__fixtures__/example/parsed-issue-no-template.json', 'utf-8')
-)
+const getInputsMock = jest.fn<typeof getInputs>()
+const addReactionMock = jest.fn<typeof addReaction>()
+const removeReactionMock = jest.fn<typeof addReaction>()
+const parseIssueMock = jest.fn<typeof parseIssue>()
+const reserveMock = jest.fn<typeof reserve>()
 
 jest.unstable_mockModule('@actions/core', () => core)
+jest.unstable_mockModule('@actions/github', () => github)
+jest.unstable_mockModule('@github/issue-parser', () => ({
+  parseIssue: parseIssueMock
+}))
+jest.unstable_mockModule('fs', () => fs)
+jest.unstable_mockModule('../src/utils/inputs.js', () => ({
+  getInputs: getInputsMock
+}))
+jest.unstable_mockModule('../src/utils/issues.js', () => ({
+  addReaction: addReactionMock,
+  removeReaction: removeReactionMock
+}))
+jest.unstable_mockModule('../src/actions/reserve.js', () => ({
+  reserve: reserveMock
+}))
 
 const main = await import('../src/main.js')
 
 describe('main', () => {
   beforeEach(() => {
-    core.getInput
-      .mockReturnValueOnce(issue)
-      .mockReturnValueOnce('template.yml')
-      .mockReturnValueOnce(`${process.cwd()}/__fixtures__/example`)
+    getInputsMock.mockReturnValue({
+      action: 'reserve',
+      issueBody: 'test',
+      issueTemplatePath: 'reservation.yml',
+      projectId: 1,
+      workspace: '/path/to/workspace'
+    })
   })
 
   afterEach(() => {
     jest.resetAllMocks()
+
+    // Reset various test data.
+    github.context.eventName = 'issues'
   })
 
-  it('Returns the parsed body (template included)', async () => {
+  it('Fails if the workflow trigger is invalid', async () => {
+    github.context.eventName = 'invalid'
+
     await main.run()
 
-    // Gets the inputs
-    expect(core.getInput).toHaveBeenCalledWith('body', { required: true })
-    expect(core.getInput).toHaveBeenCalledWith('issue-form-template', {
-      required: false
-    })
-    expect(core.getInput).toHaveBeenCalledWith('workspace', { required: true })
-
-    // Sets the outputs
-    expect(core.setOutput).toHaveBeenCalledWith(
-      'json',
-      JSON.stringify(parsedIssueWithTemplate)
+    expect(core.setFailed).toHaveBeenCalledWith(
+      'Invalid Workflow Trigger: invalid'
     )
-
-    // Does not fail
-    expect(core.setFailed).not.toHaveBeenCalled()
-  })
-
-  it('Returns the parsed body (no template)', async () => {
-    core.getInput
-      .mockReset()
-      .mockReturnValueOnce(issue)
-      .mockReturnValueOnce('')
-      .mockReturnValueOnce(`${process.cwd()}/__fixtures__/example`)
-
-    await main.run()
-
-    // Gets the inputs
-    expect(core.getInput).toHaveBeenCalledWith('body', { required: true })
-    expect(core.getInput).toHaveBeenCalledWith('issue-form-template', {
-      required: false
-    })
-    expect(core.getInput).toHaveBeenCalledWith('workspace', { required: true })
-
-    // Sets the outputs
-    expect(core.setOutput).toHaveBeenCalledWith(
-      'json',
-      JSON.stringify(parsedIssueNoTemplate)
-    )
-
-    // Does not fail
-    expect(core.setFailed).not.toHaveBeenCalled()
-  })
-
-  it('Fails if template does not exist', async () => {
-    core.getInput
-      .mockReset()
-      .mockReturnValueOnce(issue)
-      .mockReturnValueOnce('does-not-exist.yml')
-      .mockReturnValueOnce(`${process.cwd()}/__fixtures__/example`)
-
-    await main.run()
-
-    // Gets the inputs
-    expect(core.getInput).toHaveBeenCalledWith('body', { required: true })
-    expect(core.getInput).toHaveBeenCalledWith('issue-form-template', {
-      required: false
-    })
-    expect(core.getInput).toHaveBeenCalledWith('workspace', { required: true })
-
-    // Fails
-    expect(core.setFailed).toHaveBeenCalled()
-
-    // Does not set an output
-    expect(core.setOutput).not.toHaveBeenCalled()
   })
 })

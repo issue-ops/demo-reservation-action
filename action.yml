@@ -10,27 +10,29 @@ inputs:
   action:
     description: The action to take (`init`, `submit`, or `cancel`).
     required: true
-  issue_body:
-    description:
-      The issue body as a JSON string. This is typically the output of the
-      `issue-ops/parser` action.
-    required: true
   github_token:
     description: The GitHub token to use for interacting with the GitHub API.
     required: true
     default: ${{ github.token }}
-  repository:
+  issue_body:
     description:
-      The repository where the issue was created. This is required to interact
-      with the GitHub API.
+      The issue body as a JSON string. This is typically the output of the
+      `issue-ops/parser` action.
+    required: false
+  issue_template_path:
+    description:
+      Path to the issue template file from the root of the repository (e.g.
+      `.github/ISSUE_TEMPLATE/reservation.yml`).
     required: true
-    default: ${{ github.repository }}
+  project_id:
+    description: The ID of the project board where reservations are managed.
+    required: true
   workspace:
-    default: ${{ github.workspace }}
     description:
       The path where the repository has been cloned using the `actions/checkout`
       step. This is required to find the issue form template file.
     required: true
+    default: ${{ github.workspace }}
 
 outputs:
   json:

@@ -18,3 +18,6 @@ Thumbs.db
 # Extra
 tmp/
 .env
+
+# GitHub event payloads for testing
+payloads

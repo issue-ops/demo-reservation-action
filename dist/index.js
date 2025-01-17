@@ -31251,13 +31251,52 @@ async function run() {
     const workspace = coreExports.getInput('workspace', { required: true });
     coreExports.info('Running action with the following inputs:');
     coreExports.info(`  action: ${action}`);
-    coreExports.info(`  issueBody: ${issueBody}`);
+    coreExports.info(`  issueBody: ${JSON.stringify(issueBody, null, 2)}`);
     coreExports.info(`  owner: ${owner}`);
     coreExports.info(`  repository: ${repository}`);
     coreExports.info(`  workspace: ${workspace}`);
     // Fail if the specified action isn't valid.
     if (!Object.values(AllowedActions).includes(action))
         throw new Error(`Invalid action: ${action}`);
+    // if (action === AllowedActions.EXPIRE) {
+    //   // The `expire` action is not provided an issue number, so it should run
+    //   // before the action attempts to parse the issue body.
+    //   return await issues.expire()
+    // } else {
+    //   // Other than for the `expire` action, issue number is required.
+    //   if (issueNumber === -1) throw new Error('No issue number provided!')
+    //   // Add a reaction to the issue or comment to indicate it is being processed.
+    //   const initialReactionId: number = await issues.addReaction('eyes')
+    //   try {
+    //     // Parse the request.
+    //     const request: IRequestProcessor = await parse.parseIssueBody(issueNumber)
+    //     // Validate the request and exit if there are errors.
+    //     const hasErrors: boolean = await request.validate(
+    //       action as AllowedActions
+    //     )
+    //     if (hasErrors) return
+    //     if (action === AllowedActions.CLOSE) {
+    //       return await request.close()
+    //     } else if (action === AllowedActions.SUBMIT) {
+    //       return await request.submit()
+    //     } else if (action === AllowedActions.STATUS) {
+    //       return await request.status()
+    //     } else if (action === AllowedActions.MIGRATE) {
+    //       return await request.migrate(false)
+    //     }
+    //     // Remove the old reaction and add a new one to indicate the request has
+    //     // been processed.
+    //     await issues.removeReaction(initialReactionId)
+    //     await issues.addReaction('rocket')
+    //   } catch (error) {
+    //     // Remove the old reaction and add a new one to indicate the request has
+    //     // been processed with errors.
+    //     await issues.removeReaction(initialReactionId)
+    //     await issues.addReaction('-1')
+    //     // Re-throw the error.
+    //     throw error
+    //   }
+    // }
 }
 
 /* istanbul ignore next */
