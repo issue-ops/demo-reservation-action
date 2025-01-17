@@ -39094,7 +39094,7 @@ async function expire(projectNumber, issueTemplateBody) {
         owner: githubExports.context.repo.owner,
         repo: githubExports.context.repo.repo,
         state: 'open', // Open issues only; closed are considered past reservations.
-        labels: 'confirmed,reservation' // Confirmed reservations only.
+        labels: 'reservation' // Only issues with the `reservation` label.
     });
     coreExports.info(`Existing Reservations: ${issues.length}`);
     // Check the end date for each reservation. If it has passed, expire the

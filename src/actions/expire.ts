@@ -34,7 +34,7 @@ export async function expire(
       owner: github.context.repo.owner,
       repo: github.context.repo.repo,
       state: 'open', // Open issues only; closed are considered past reservations.
-      labels: 'confirmed,reservation' // Confirmed reservations only.
+      labels: 'reservation' // Only issues with the `reservation` label.
     })
 
   core.info(`Existing Reservations: ${issues.length}`)
