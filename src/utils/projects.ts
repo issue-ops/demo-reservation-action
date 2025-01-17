@@ -7,10 +7,12 @@ import { GraphQlProjectsV2QueryResponse } from '../types.js'
  * Moves an issue to a different column in a project board.
  *
  * @param projectNumber The number of the project to move the issue in.
+ * @param issueNumber The number of the issue to move.
  * @param column The name of the column to move the issue to.
  */
 export async function moveIssue(
   projectNumber: number,
+  issueNumber: number,
   column: ProjectColumnNames
 ) {
   core.info(`Moving to Project Column: ${column}...`)
@@ -59,7 +61,7 @@ export async function moveIssue(
       owner: github.context.repo.owner,
       repo: github.context.repo.repo,
       project: projectNumber,
-      issueNumber: github.context.payload.issue!.number
+      issueNumber
     }
   )
 

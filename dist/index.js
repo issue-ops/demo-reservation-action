@@ -31344,9 +31344,10 @@ var RoomAmenity;
  * Moves an issue to a different column in a project board.
  *
  * @param projectNumber The number of the project to move the issue in.
+ * @param issueNumber The number of the issue to move.
  * @param column The name of the column to move the issue to.
  */
-async function moveIssue(projectNumber, column) {
+async function moveIssue(projectNumber, issueNumber, column) {
     coreExports.info(`Moving to Project Column: ${column}...`);
     const octokit = githubExports.getOctokit(coreExports.getInput('github_token', { required: true }));
     // ProjectsV2 uses the GraphQL API. In this case, we need to get the `Status`
@@ -31387,7 +31388,7 @@ async function moveIssue(projectNumber, column) {
         owner: githubExports.context.repo.owner,
         repo: githubExports.context.repo.repo,
         project: projectNumber,
-        issueNumber: githubExports.context.payload.issue.number
+        issueNumber
     });
     coreExports.info('GraphQL Response:');
     coreExports.info(JSON.stringify(response, null, 2));
@@ -31440,7 +31441,7 @@ async function cancel(projectNumber) {
         labels: ['cancelled']
     });
     // Move the issue to the Confirmed Reservations project column.
-    await moveIssue(projectNumber, ProjectColumnNames.CANCELLED);
+    await moveIssue(projectNumber, githubExports.context.payload.issue.number, ProjectColumnNames.CANCELLED);
     // Add a comment to the issue with the results.
     await octokit.rest.issues.createComment({
         owner: githubExports.context.repo.owner,
@@ -31462,23 +31463,6 @@ async function cancel(projectNumber) {
         state: 'closed',
         state_reason: 'not_planned'
     });
-    coreExports.endGroup();
-}
-
-/**
- * Initializes the reservation request by performing the following steps:
- *
- * - Move the issue to the New Reservations project column.
- *
- * @param reservation The reservation request details.
- * @param issueTemplateBody The body of the issue template.
- * @param projectNumber The number of the project to move the issue in.
- * @returns An error message if the request is invalid, undefined otherwise.
- */
-async function init(reservation, issueTemplateBody, projectNumber) {
-    coreExports.startGroup('Processing Reservation Initialization...');
-    // Move the issue to the New Reservations project column.
-    await moveIssue(projectNumber, ProjectColumnNames.NEW);
     coreExports.endGroup();
 }
 
@@ -39090,7 +39074,88 @@ function parseTemplate(template) {
     return parsedTemplate;
 }
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
+/**
+ * Expires reservation requests by performing the following steps:
+ *
+ * - Add the `expired` label to the issue.
+ * - Move the issue to the Expired Reservations project column.
+ * - Add a comment to the issue with the results.
+ * - If not closed already, closes the issue.
+ *
+ * @param projectNumber The number of the project to move the issue in.
+ * @param issueTemplateBody The body of the issue template.
+ * @returns An error message if the request is invalid, undefined otherwise.
+ */
+async function expire(projectNumber, issueTemplateBody) {
+    coreExports.startGroup('Processing Expiration Request...');
+    const octokit = githubExports.getOctokit(coreExports.getInput('github_token', { required: true }));
+    // Get the list of existing reservations from the GitHub Issues API.
+    const issues = await octokit.paginate(octokit.rest.issues.listForRepo, {
+        owner: githubExports.context.repo.owner,
+        repo: githubExports.context.repo.repo,
+        state: 'open', // Open issues only; closed are considered past reservations.
+        labels: 'confirmed,reservation' // Confirmed reservations only.
+    });
+    coreExports.info(`Existing Reservations: ${issues.length}`);
+    // Check the end date for each reservation. If it has passed, expire the
+    // reservation.
+    for (const issue of issues) {
+        // Get the reservation information from the issue body.
+        // Parse the issue body to get the existing reservation details.
+        const reservation = parseIssue(issue.body, issueTemplateBody);
+        // Check if the end date has passed.
+        if (new Date(reservation['check-out']) < new Date()) {
+            coreExports.info(`Reservation Expired: ${issue.number}`);
+            // Add the `expired` label to the issue.
+            await octokit.rest.issues.addLabels({
+                owner: githubExports.context.repo.owner,
+                repo: githubExports.context.repo.repo,
+                issue_number: issue.number,
+                labels: ['expired']
+            });
+            // Move the issue to the Confirmed Reservations project column.
+            await moveIssue(projectNumber, issue.number, ProjectColumnNames.EXPIRED);
+            // Add a comment to the issue with the results.
+            await octokit.rest.issues.createComment({
+                owner: githubExports.context.repo.owner,
+                repo: githubExports.context.repo.repo,
+                issue_number: issue.number,
+                body: dedent `### :calendar: Reservation Request Expired
+
+        We hope you enjoyed your fake stay! Please pretend to come back soon!
+
+        Thank you for trying our IssueOps demonstration!`
+            });
+            // Close the issue.
+            await octokit.rest.issues.update({
+                owner: githubExports.context.repo.owner,
+                repo: githubExports.context.repo.repo,
+                issue_number: issue.number,
+                state: 'closed',
+                state_reason: 'completed'
+            });
+        }
+    }
+    coreExports.endGroup();
+}
+
+/**
+ * Initializes the reservation request by performing the following steps:
+ *
+ * - Move the issue to the New Reservations project column.
+ *
+ * @param reservation The reservation request details.
+ * @param issueTemplateBody The body of the issue template.
+ * @param projectNumber The number of the project to move the issue in.
+ * @returns An error message if the request is invalid, undefined otherwise.
+ */
+async function init(projectNumber) {
+    coreExports.startGroup('Processing Reservation Initialization...');
+    // Move the issue to the New Reservations project column.
+    await moveIssue(projectNumber, githubExports.context.payload.issue.number, ProjectColumnNames.NEW);
+    coreExports.endGroup();
+}
+
 /**
  * Confirms the reservation request by performing the following steps:
  *
@@ -39109,6 +39174,7 @@ async function reserve(reservation, issueTemplateBody, projectNumber) {
     const octokit = githubExports.getOctokit(coreExports.getInput('github_token', { required: true }));
     coreExports.info('Getting Rooms');
     // Get the list of rooms from the JSON file.
+    const __dirname = dirname(fileURLToPath(import.meta.url));
     const rooms = JSON.parse(readFileSync(require$$1$5.join(__dirname, '..', 'rooms.json'), 'utf8'));
     coreExports.info('Rooms JSON File:');
     coreExports.info(JSON.stringify(rooms, null, 2));
@@ -39144,7 +39210,7 @@ async function reserve(reservation, issueTemplateBody, projectNumber) {
         labels: ['confirmed']
     });
     // Move the issue to the Confirmed Reservations project column.
-    await moveIssue(projectNumber, ProjectColumnNames.CONFIRMED);
+    await moveIssue(projectNumber, githubExports.context.payload.issue.number, ProjectColumnNames.CONFIRMED);
     // Add a comment to the issue with the results.
     await octokit.rest.issues.createComment({
         owner: githubExports.context.repo.owner,
@@ -39231,13 +39297,22 @@ async function getConflictingReservations(reservation, issueTemplateBody, owner,
  * @returns An object containing all the inputs (except the token).
  */
 function getInputs() {
-    // Get the action inputs.
+    // The action to take (`init`, `reserve`, `cancel`, or 'expire').
     const action = coreExports.getInput('action', { required: true });
-    const issueBody = JSON.parse(coreExports.getInput('issue_body', { required: true }));
+    // The issue body as a JSON string. This is typically the output of the
+    // `issue-ops/parser` action. When the expiration action is run, the issue
+    // body will be missing.
+    const issueBody = coreExports.getInput('issue_body') !== ''
+        ? JSON.parse(coreExports.getInput('issue_body'))
+        : {};
+    // Path to the issue template file from the root of the repository.
     const issueTemplatePath = coreExports.getInput('issue_template_path', {
         required: true
     });
+    // The number of the project board where reservations are managed.
     const projectNumber = Number(coreExports.getInput('project_number', { required: true }));
+    // The path where the repository has been cloned using the `actions/checkout`
+    // step.
     const workspace = coreExports.getInput('workspace', { required: true });
     coreExports.startGroup('Running Action...');
     coreExports.info(`  action: ${action}`);
@@ -39325,26 +39400,24 @@ async function run() {
     // Fail if the specified action isn't valid.
     if (!Object.values(AllowedActions).includes(action))
         return coreExports.setFailed(`Invalid Action: ${action}`);
-    // The expire action functions differently than the others. Since it runs on
-    // a schedule event, it doesn't have access to a specific issue body. As such,
-    // it should be processed separately from the actions that are triggered by
-    // specific issue/comment events.
-    if (action === AllowedActions.EXPIRE) {
-        // return await expire()
-        return coreExports.setFailed('Expire action not implemented yet');
-    }
-    // Add a reaction to the issue to indicate that the action is processing.
-    const initialReactionId = await addReaction(Reaction.EYES);
-    // Since the issue body was already parsed using the `issue-ops/parser`
-    // action, we can access the parsed data from the `issueBody` property.
-    coreExports.startGroup('Parsed Issue Body...');
-    coreExports.info(JSON.stringify(issueBody, null, 2));
-    coreExports.endGroup();
     // Get the issue template body from the `issueTemplatePath` input.
     const issueTemplateBody = readFileSync(require$$1$5.join(workspace, issueTemplatePath), 'utf8');
     coreExports.startGroup('Issue Template Body...');
     coreExports.info(issueTemplateBody);
     coreExports.endGroup();
+    // The expire action functions differently than the others. Since it runs on
+    // a schedule event, it doesn't have access to a specific issue body. As such,
+    // it should be processed separately from the actions that are triggered by
+    // specific issue/comment events.
+    if (action === AllowedActions.EXPIRE)
+        return await expire(projectNumber, issueTemplateBody);
+    // Since the issue body was already parsed using the `issue-ops/parser`
+    // action, we can access the parsed data from the `issueBody` property.
+    coreExports.startGroup('Parsed Issue Body...');
+    coreExports.info(JSON.stringify(issueBody, null, 2));
+    coreExports.endGroup();
+    // Add a reaction to the issue to indicate that the action is processing.
+    const initialReactionId = await addReaction(Reaction.EYES);
     // (Optional) Convert the parsed issue body to a more strongly-typed object.
     // This prevents needing to constantly cast the properties to the correct
     // types during invocation of your action.
@@ -39362,7 +39435,7 @@ async function run() {
     switch (action) {
         case AllowedActions.INIT:
             // Process the reservation.
-            await init(reservation, issueTemplateBody, projectNumber);
+            await init(projectNumber);
             // Remove the initial reaction and add a thumbs up to indicate success.
             await removeReaction(initialReactionId);
             await addReaction(Reaction.THUMBS_UP);

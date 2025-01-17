@@ -1,4 +1,3 @@
-import { ReservationRequest } from '../types.js';
 /**
  * Initializes the reservation request by performing the following steps:
  *
@@ -9,4 +8,4 @@ import { ReservationRequest } from '../types.js';
  * @param projectNumber The number of the project to move the issue in.
  * @returns An error message if the request is invalid, undefined otherwise.
  */
-export declare function init(reservation: ReservationRequest, issueTemplateBody: string, projectNumber: number): Promise<void>;
+export declare function init(projectNumber: number): Promise<void>;

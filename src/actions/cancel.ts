@@ -31,7 +31,11 @@ export async function cancel(projectNumber: number): Promise<void> {
   })
 
   // Move the issue to the Confirmed Reservations project column.
-  await moveIssue(projectNumber, ProjectColumnNames.CANCELLED)
+  await moveIssue(
+    projectNumber,
+    github.context.payload.issue!.number,
+    ProjectColumnNames.CANCELLED
+  )
 
   // Add a comment to the issue with the results.
   await octokit.rest.issues.createComment({

@@ -11,8 +11,6 @@ import { ProjectColumnNames } from '../enums.js'
 import { ReservationRequest, Room } from '../types.js'
 import { moveIssue } from '../utils/projects.js'
 
-const __dirname = dirname(fileURLToPath(import.meta.url))
-
 /**
  * Confirms the reservation request by performing the following steps:
  *
@@ -40,6 +38,7 @@ export async function reserve(
   core.info('Getting Rooms')
 
   // Get the list of rooms from the JSON file.
+  const __dirname = dirname(fileURLToPath(import.meta.url))
   const rooms = JSON.parse(
     readFileSync(path.join(__dirname, '..', 'rooms.json'), 'utf8')
   ) as Room[]
@@ -91,7 +90,11 @@ export async function reserve(
   })
 
   // Move the issue to the Confirmed Reservations project column.
-  await moveIssue(projectNumber, ProjectColumnNames.CONFIRMED)
+  await moveIssue(
+    projectNumber,
+    github.context.payload.issue!.number,
+    ProjectColumnNames.CONFIRMED
+  )
 
   // Add a comment to the issue with the results.
   await octokit.rest.issues.createComment({

@@ -8,8 +8,6 @@ export type ActionInputs = {
     projectNumber: number;
     workspace: string;
 };
-/** Reasons for Issue Closure */
-export type IssueClosedReason = 'completed' | 'not_planned' | 'reopened';
 /** Reservation Request Details */
 export type ReservationRequest = {
     /** Check In Date */

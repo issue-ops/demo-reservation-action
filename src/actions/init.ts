@@ -1,6 +1,6 @@
 import * as core from '@actions/core'
+import * as github from '@actions/github'
 import { ProjectColumnNames } from '../enums.js'
-import { ReservationRequest } from '../types.js'
 import { moveIssue } from '../utils/projects.js'
 
 /**
@@ -13,15 +13,15 @@ import { moveIssue } from '../utils/projects.js'
  * @param projectNumber The number of the project to move the issue in.
  * @returns An error message if the request is invalid, undefined otherwise.
  */
-export async function init(
-  reservation: ReservationRequest,
-  issueTemplateBody: string,
-  projectNumber: number
-): Promise<void> {
+export async function init(projectNumber: number): Promise<void> {
   core.startGroup('Processing Reservation Initialization...')
 
   // Move the issue to the New Reservations project column.
-  await moveIssue(projectNumber, ProjectColumnNames.NEW)
+  await moveIssue(
+    projectNumber,
+    github.context.payload.issue!.number,
+    ProjectColumnNames.NEW
+  )
 
   core.endGroup()
 }

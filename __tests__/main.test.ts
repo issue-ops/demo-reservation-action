@@ -3,7 +3,7 @@ import { jest } from '@jest/globals'
 import * as core from '../__fixtures__/@actions/core.js'
 import * as github from '../__fixtures__/@actions/github.js'
 import * as fs from '../__fixtures__/fs.js'
-import type { reserve } from '../src/actions/reserve.js'
+import type { reserve } from '../src/actions/reserve.mjs'
 import { getInputs } from '../src/utils/inputs.js'
 import type { addReaction } from '../src/utils/issues.js'
 
@@ -26,7 +26,7 @@ jest.unstable_mockModule('../src/utils/issues.js', () => ({
   addReaction: addReactionMock,
   removeReaction: removeReactionMock
 }))
-jest.unstable_mockModule('../src/actions/reserve.js', () => ({
+jest.unstable_mockModule('../src/actions/reserve.mjs', () => ({
   reserve: reserveMock
 }))
 
