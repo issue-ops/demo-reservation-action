@@ -31426,12 +31426,10 @@ async function moveIssue(projectNumber, column) {
  * - Add a comment to the issue with the results.
  * - If not closed already, closes the issue.
  *
- * @param reservation The reservation request details.
- * @param issueTemplateBody The body of the issue template.
  * @param projectNumber The number of the project to move the issue in.
  * @returns An error message if the request is invalid, undefined otherwise.
  */
-async function cancel(reservation, issueTemplateBody, projectNumber) {
+async function cancel(projectNumber) {
     coreExports.startGroup('Processing Cancellation Request...');
     const octokit = githubExports.getOctokit(coreExports.getInput('github_token', { required: true }));
     // Add the `confirmed` label to the issue.
@@ -39236,7 +39234,9 @@ function getInputs() {
     // Get the action inputs.
     const action = coreExports.getInput('action', { required: true });
     const issueBody = JSON.parse(coreExports.getInput('issue_body', { required: true }));
-    const issueTemplatePath = coreExports.getInput('issue_template_path');
+    const issueTemplatePath = coreExports.getInput('issue_template_path', {
+        required: true
+    });
     const projectNumber = Number(coreExports.getInput('project_number', { required: true }));
     const workspace = coreExports.getInput('workspace', { required: true });
     coreExports.startGroup('Running Action...');
@@ -39375,7 +39375,7 @@ async function run() {
             await addReaction(Reaction.THUMBS_UP);
             break;
         case AllowedActions.CANCEL:
-            await cancel(reservation, issueTemplateBody, projectNumber);
+            await cancel(projectNumber);
             // Remove the initial reaction and add a thumbs up to indicate success.
             await removeReaction(initialReactionId);
             await addReaction(Reaction.THUMBS_UP);

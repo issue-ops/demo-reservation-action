@@ -97,7 +97,7 @@ export async function run(): Promise<void> {
       await addReaction(Reaction.THUMBS_UP)
       break
     case AllowedActions.CANCEL:
-      await cancel(reservation, issueTemplateBody, projectNumber)
+      await cancel(projectNumber)
 
       // Remove the initial reaction and add a thumbs up to indicate success.
       await removeReaction(initialReactionId)

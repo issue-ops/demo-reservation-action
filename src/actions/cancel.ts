@@ -2,7 +2,6 @@ import * as core from '@actions/core'
 import * as github from '@actions/github'
 import { dedent } from 'ts-dedent'
 import { ProjectColumnNames } from '../enums.js'
-import { ReservationRequest } from '../types.js'
 import { moveIssue } from '../utils/projects.js'
 
 /**
@@ -13,16 +12,10 @@ import { moveIssue } from '../utils/projects.js'
  * - Add a comment to the issue with the results.
  * - If not closed already, closes the issue.
  *
- * @param reservation The reservation request details.
- * @param issueTemplateBody The body of the issue template.
  * @param projectNumber The number of the project to move the issue in.
  * @returns An error message if the request is invalid, undefined otherwise.
  */
-export async function cancel(
-  reservation: ReservationRequest,
-  issueTemplateBody: string,
-  projectNumber: number
-): Promise<void> {
+export async function cancel(projectNumber: number): Promise<void> {
   core.startGroup('Processing Cancellation Request...')
 
   const octokit = github.getOctokit(
