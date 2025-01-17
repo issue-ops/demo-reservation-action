@@ -39175,7 +39175,7 @@ async function reserve(reservation, issueTemplateBody, projectNumber) {
     coreExports.info('Getting Rooms');
     // Get the list of rooms from the JSON file.
     const __dirname = dirname(fileURLToPath(import.meta.url));
-    const rooms = JSON.parse(readFileSync(require$$1$5.join(__dirname, 'rooms.json'), 'utf8'));
+    const rooms = JSON.parse(readFileSync(require$$1$5.join(__dirname, '..', 'src', 'rooms.json'), 'utf8'));
     coreExports.info('Rooms JSON File:');
     coreExports.info(JSON.stringify(rooms, null, 2));
     // Get the rooms that match the room type from the JSON file.

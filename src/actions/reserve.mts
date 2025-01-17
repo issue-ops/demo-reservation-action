@@ -40,7 +40,7 @@ export async function reserve(
   // Get the list of rooms from the JSON file.
   const __dirname = dirname(fileURLToPath(import.meta.url))
   const rooms = JSON.parse(
-    readFileSync(path.join(__dirname, 'rooms.json'), 'utf8')
+    readFileSync(path.join(__dirname, '..', 'src', 'rooms.json'), 'utf8')
   ) as Room[]
 
   core.info('Rooms JSON File:')
