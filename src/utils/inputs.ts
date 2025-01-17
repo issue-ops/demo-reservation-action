@@ -1,4 +1,5 @@
 import * as core from '@actions/core'
+import type { ParsedBody } from '@github/issue-parser'
 import { ActionInputs } from '../types.js'
 
 /**
@@ -9,7 +10,9 @@ import { ActionInputs } from '../types.js'
 export function getInputs(): ActionInputs {
   // Get the action inputs.
   const action: string = core.getInput('action', { required: true })
-  const issueBody: string = core.getInput('issue_body', { required: true })
+  const issueBody: ParsedBody = JSON.parse(
+    core.getInput('issue_body', { required: true })
+  )
   const issueTemplatePath: string = core.getInput('issue_template_path', {
     required: true
   })

@@ -1,6 +1,5 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
-import { Endpoints } from '@octokit/types'
 import { Reaction } from '../enums.js'
 
 /**
@@ -18,36 +17,26 @@ export async function addReaction(content: Reaction): Promise<number> {
     core.getInput('github_token', { required: true })
   )
 
-  let response: Endpoints['POST /repos/{owner}/{repo}/issues/{issue_number}/reactions']['response']
-
   // If there is a comment in the payload, add the reaction to the comment.
-  if (github.context.payload.comment !== undefined) {
-    core.info(
-      `Adding Reaction to Comment: #${github.context.payload.comment.id}`
-    )
-
-    response = await octokit.rest.reactions.createForIssueComment({
-      owner: github.context.repo.owner,
-      repo: github.context.repo.repo,
-      issue_number: github.context.payload.issue.number,
-      comment_id: github.context.payload.comment.id,
-      content
-    })
-  } else {
-    core.info(
-      `Adding Reaction to Issue: #${github.context.payload.issue.number}`
-    )
-
-    response = await octokit.rest.reactions.createForIssue({
-      owner: github.context.repo.owner,
-      repo: github.context.repo.repo,
-      issue_number: github.context.payload.issue.number,
-      content
-    })
-  }
-
-  // Return the reaction ID.
-  return response.data.id
+  if (github.context.payload.comment !== undefined)
+    return (
+      await octokit.rest.reactions.createForIssueComment({
+        owner: github.context.repo.owner,
+        repo: github.context.repo.repo,
+        issue_number: github.context.payload.issue.number,
+        comment_id: github.context.payload.comment.id,
+        content
+      })
+    ).data.id
+  else
+    return (
+      await octokit.rest.reactions.createForIssue({
+        owner: github.context.repo.owner,
+        repo: github.context.repo.repo,
+        issue_number: github.context.payload.issue.number,
+        content
+      })
+    ).data.id
 }
 
 /**
@@ -65,27 +54,18 @@ export async function removeReaction(id: number): Promise<void> {
   )
 
   // If there is a comment in the payload, remove the reaction from the comment.
-  if (github.context.payload.comment !== undefined) {
-    core.info(
-      `Removing Reaction from Comment: #${github.context.payload.comment.id}`
-    )
-
+  if (github.context.payload.comment !== undefined)
     await octokit.rest.reactions.deleteForIssueComment({
       owner: github.context.repo.owner,
       repo: github.context.repo.repo,
       comment_id: github.context.payload.comment.id,
       reaction_id: id
     })
-  } else {
-    core.info(
-      `Removing Reaction from Issue: #${github.context.payload.issue.number}`
-    )
-
+  else
     await octokit.rest.reactions.deleteForIssue({
       owner: github.context.repo.owner,
       repo: github.context.repo.repo,
       issue_number: github.context.payload.issue.number,
       reaction_id: id
     })
-  }
 }

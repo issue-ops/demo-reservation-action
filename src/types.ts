@@ -1,9 +1,10 @@
-import { RoomAmenity, RoomType } from './enums.js'
+import type { ParsedBody } from '@github/issue-parser'
+import type { RoomAmenity, RoomType } from './enums.js'
 
 /** Action Inputs */
 export type ActionInputs = {
   action: string
-  issueBody: string
+  issueBody: ParsedBody
   issueTemplatePath: string
   projectId: number
   workspace: string

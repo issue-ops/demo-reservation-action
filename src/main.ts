@@ -1,6 +1,5 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
-import { parseIssue } from '@github/issue-parser'
 import { readFileSync } from 'fs'
 import path from 'path'
 import { reserve } from './actions/reserve.js'
@@ -44,32 +43,38 @@ export async function run(): Promise<void> {
   // Add a reaction to the issue to indicate that the action is processing.
   const initialReactionId: number = await addReaction(Reaction.EYES)
 
-  // Parse the issue body into a more usable format. Include the issue template
-  // so that the parser can extract additional metadata from the issue.
+  // Since the issue body was already parsed using the `issue-ops/parser`
+  // action, we can access the parsed data from the `issueBody` property.
+  core.startGroup('Parsed Issue Body:')
+  core.info(JSON.stringify(issueBody, null, 2))
+  core.endGroup()
+
+  // Get the issue template body from the `issueTemplatePath` input.
   const issueTemplateBody = readFileSync(
     path.join(workspace, '.github', 'ISSUE_TEMPLATE', issueTemplatePath),
     'utf8'
   )
-  const parsedIssueBody = parseIssue(issueBody, issueTemplateBody)
-  core.info('Parsed Issue Body:')
-  core.info(JSON.stringify(parsedIssueBody, null, 2))
+  core.startGroup('Issue Template Body:')
+  core.info(issueTemplateBody)
+  core.endGroup()
 
   // (Optional) Convert the parsed issue body to a more strongly-typed object.
   // This prevents needing to constantly cast the properties to the correct
   // types during invocation of your action.
   const reservation: ReservationRequest = {
-    checkIn: new Date(parsedIssueBody['check-in'] as string),
-    checkOut: new Date(parsedIssueBody['check-out'] as string),
-    guests: Number(parsedIssueBody.guests as string),
-    room: (parsedIssueBody.room as string[])[0] as RoomType,
-    amenities: parsedIssueBody.amenities as {
+    checkIn: new Date(issueBody['check-in'] as string),
+    checkOut: new Date(issueBody['check-out'] as string),
+    guests: Number(issueBody.guests as string),
+    room: (issueBody.room as string[])[0] as RoomType,
+    amenities: issueBody.amenities as {
       selected: RoomAmenity[]
       unselected: RoomAmenity[]
     }
   }
 
-  core.info('Parsed Reservation Request:')
+  core.startGroup('Parsed Reservation Request:')
   core.info(JSON.stringify(reservation, null, 2))
+  core.endGroup()
 
   // Depending on the action, run the appropriate function.
   switch (action) {

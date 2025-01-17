@@ -39097,7 +39097,7 @@ async function getConflictingReservations(reservation, issueTemplateBody, owner,
 function getInputs() {
     // Get the action inputs.
     const action = coreExports.getInput('action', { required: true });
-    const issueBody = coreExports.getInput('issue_body', { required: true });
+    const issueBody = JSON.parse(coreExports.getInput('issue_body', { required: true }));
     const issueTemplatePath = coreExports.getInput('issue_template_path', {
         required: true
     });
@@ -39130,29 +39130,22 @@ async function addReaction(content) {
     if (githubExports.context.payload.issue === undefined)
         throw new Error('No Issue Payload Found');
     const octokit = githubExports.getOctokit(coreExports.getInput('github_token', { required: true }));
-    let response;
     // If there is a comment in the payload, add the reaction to the comment.
-    if (githubExports.context.payload.comment !== undefined) {
-        coreExports.info(`Adding Reaction to Comment: #${githubExports.context.payload.comment.id}`);
-        response = await octokit.rest.reactions.createForIssueComment({
+    if (githubExports.context.payload.comment !== undefined)
+        return (await octokit.rest.reactions.createForIssueComment({
             owner: githubExports.context.repo.owner,
             repo: githubExports.context.repo.repo,
             issue_number: githubExports.context.payload.issue.number,
             comment_id: githubExports.context.payload.comment.id,
             content
-        });
-    }
-    else {
-        coreExports.info(`Adding Reaction to Issue: #${githubExports.context.payload.issue.number}`);
-        response = await octokit.rest.reactions.createForIssue({
+        })).data.id;
+    else
+        return (await octokit.rest.reactions.createForIssue({
             owner: githubExports.context.repo.owner,
             repo: githubExports.context.repo.repo,
             issue_number: githubExports.context.payload.issue.number,
             content
-        });
-    }
-    // Return the reaction ID.
-    return response.data.id;
+        })).data.id;
 }
 /**
  * Removes a reaction from a specific issue or comment.
@@ -39165,24 +39158,20 @@ async function removeReaction(id) {
         throw new Error('No Issue Payload Found');
     const octokit = githubExports.getOctokit(coreExports.getInput('github_token', { required: true }));
     // If there is a comment in the payload, remove the reaction from the comment.
-    if (githubExports.context.payload.comment !== undefined) {
-        coreExports.info(`Removing Reaction from Comment: #${githubExports.context.payload.comment.id}`);
+    if (githubExports.context.payload.comment !== undefined)
         await octokit.rest.reactions.deleteForIssueComment({
             owner: githubExports.context.repo.owner,
             repo: githubExports.context.repo.repo,
             comment_id: githubExports.context.payload.comment.id,
             reaction_id: id
         });
-    }
-    else {
-        coreExports.info(`Removing Reaction from Issue: #${githubExports.context.payload.issue.number}`);
+    else
         await octokit.rest.reactions.deleteForIssue({
             owner: githubExports.context.repo.owner,
             repo: githubExports.context.repo.repo,
             issue_number: githubExports.context.payload.issue.number,
             reaction_id: id
         });
-    }
 }
 
 /**
@@ -39208,24 +39197,29 @@ async function run() {
     }
     // Add a reaction to the issue to indicate that the action is processing.
     const initialReactionId = await addReaction(Reaction.EYES);
-    // Parse the issue body into a more usable format. Include the issue template
-    // so that the parser can extract additional metadata from the issue.
+    // Since the issue body was already parsed using the `issue-ops/parser`
+    // action, we can access the parsed data from the `issueBody` property.
+    coreExports.startGroup('Parsed Issue Body:');
+    coreExports.info(JSON.stringify(issueBody, null, 2));
+    coreExports.endGroup();
+    // Get the issue template body from the `issueTemplatePath` input.
     const issueTemplateBody = readFileSync(require$$1$5.join(workspace, '.github', 'ISSUE_TEMPLATE', issueTemplatePath), 'utf8');
-    const parsedIssueBody = parseIssue(issueBody, issueTemplateBody);
-    coreExports.info('Parsed Issue Body:');
-    coreExports.info(JSON.stringify(parsedIssueBody, null, 2));
+    coreExports.startGroup('Issue Template Body:');
+    coreExports.info(issueTemplateBody);
+    coreExports.endGroup();
     // (Optional) Convert the parsed issue body to a more strongly-typed object.
     // This prevents needing to constantly cast the properties to the correct
     // types during invocation of your action.
     const reservation = {
-        checkIn: new Date(parsedIssueBody['check-in']),
-        checkOut: new Date(parsedIssueBody['check-out']),
-        guests: Number(parsedIssueBody.guests),
-        room: parsedIssueBody.room[0],
-        amenities: parsedIssueBody.amenities
+        checkIn: new Date(issueBody['check-in']),
+        checkOut: new Date(issueBody['check-out']),
+        guests: Number(issueBody.guests),
+        room: issueBody.room[0],
+        amenities: issueBody.amenities
     };
-    coreExports.info('Parsed Reservation Request:');
+    coreExports.startGroup('Parsed Reservation Request:');
     coreExports.info(JSON.stringify(reservation, null, 2));
+    coreExports.endGroup();
     // Depending on the action, run the appropriate function.
     switch (action) {
         case AllowedActions.RESERVE:
