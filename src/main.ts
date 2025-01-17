@@ -80,7 +80,7 @@ export async function run(): Promise<void> {
   switch (action) {
     case AllowedActions.RESERVE:
       // Initialize the request.
-      await reserve(reservation, issueTemplateBody, projectId)
+      await reserve(reservation, issueTemplateBody, projectId, workspace)
 
       // Remove the initial reaction and add a thumbs up to indicate success.
       await removeReaction(initialReactionId)

@@ -10,7 +10,7 @@ import { ReservationRequest } from '../types.js';
  * @param reservation The reservation request details.
  * @param issueTemplateBody The body of the issue template.
  * @param projectId The ID of the project to move the issue to.
- * @param issueNumber The issue number of the reservation request.
+ * @param workspace The path to the GitHub workspace.
  * @returns An error message if the request is invalid, undefined otherwise.
  */
-export declare function reserve(reservation: ReservationRequest, issueTemplateBody: string, projectId: number): Promise<void>;
+export declare function reserve(reservation: ReservationRequest, issueTemplateBody: string, projectId: number, workspace: string): Promise<void>;

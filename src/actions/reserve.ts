@@ -3,6 +3,7 @@ import * as github from '@actions/github'
 import { parseIssue } from '@github/issue-parser'
 import type { RestEndpointMethodTypes } from '@octokit/plugin-rest-endpoint-methods'
 import { readFileSync } from 'fs'
+import path from 'path'
 import { dedent } from 'ts-dedent'
 import { ProjectColumnNames } from '../enums.js'
 import { ReservationRequest, Room } from '../types.js'
@@ -19,13 +20,14 @@ import { moveIssue } from '../utils/projects.js'
  * @param reservation The reservation request details.
  * @param issueTemplateBody The body of the issue template.
  * @param projectId The ID of the project to move the issue to.
- * @param issueNumber The issue number of the reservation request.
+ * @param workspace The path to the GitHub workspace.
  * @returns An error message if the request is invalid, undefined otherwise.
  */
 export async function reserve(
   reservation: ReservationRequest,
   issueTemplateBody: string,
-  projectId: number
+  projectId: number,
+  workspace: string
 ): Promise<void> {
   core.startGroup('Processing Reservation Request...')
 
@@ -34,7 +36,9 @@ export async function reserve(
   )
 
   // Get the list of rooms from the JSON file.
-  const rooms = JSON.parse(readFileSync('../rooms.json', 'utf8')) as Room[]
+  const rooms = JSON.parse(
+    readFileSync(path.join(workspace, 'src', 'rooms.json'), 'utf8')
+  ) as Room[]
 
   core.info('Rooms JSON File:')
   core.info(JSON.stringify(rooms, null, 2))

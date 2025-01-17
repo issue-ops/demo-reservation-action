@@ -38977,14 +38977,14 @@ async function moveIssue(projectId, column) {
  * @param reservation The reservation request details.
  * @param issueTemplateBody The body of the issue template.
  * @param projectId The ID of the project to move the issue to.
- * @param issueNumber The issue number of the reservation request.
+ * @param workspace The path to the GitHub workspace.
  * @returns An error message if the request is invalid, undefined otherwise.
  */
-async function reserve(reservation, issueTemplateBody, projectId) {
+async function reserve(reservation, issueTemplateBody, projectId, workspace) {
     coreExports.startGroup('Processing Reservation Request...');
     const octokit = githubExports.getOctokit(coreExports.getInput('github_token', { required: true }));
     // Get the list of rooms from the JSON file.
-    const rooms = JSON.parse(readFileSync('../rooms.json', 'utf8'));
+    const rooms = JSON.parse(readFileSync(require$$1$5.join(workspace, 'src', 'rooms.json'), 'utf8'));
     coreExports.info('Rooms JSON File:');
     coreExports.info(JSON.stringify(rooms, null, 2));
     // Get the rooms that match the room type from the JSON file.
@@ -39224,7 +39224,7 @@ async function run() {
     switch (action) {
         case AllowedActions.RESERVE:
             // Initialize the request.
-            await reserve(reservation, issueTemplateBody, projectId);
+            await reserve(reservation, issueTemplateBody, projectId, workspace);
             // Remove the initial reaction and add a thumbs up to indicate success.
             await removeReaction(initialReactionId);
             await addReaction(Reaction.THUMBS_UP);
