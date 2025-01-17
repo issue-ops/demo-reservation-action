@@ -3,6 +3,7 @@ import * as github from '@actions/github'
 import { readFileSync } from 'fs'
 import path from 'path'
 import { cancel } from './actions/cancel.js'
+import { init } from './actions/init.js'
 import { reserve } from './actions/reserve.js'
 import {
   AllowedActions,
@@ -79,8 +80,16 @@ export async function run(): Promise<void> {
 
   // Depending on the action, run the appropriate function.
   switch (action) {
+    case AllowedActions.INIT:
+      // Process the reservation.
+      await init(reservation, issueTemplateBody, projectNumber)
+
+      // Remove the initial reaction and add a thumbs up to indicate success.
+      await removeReaction(initialReactionId)
+      await addReaction(Reaction.THUMBS_UP)
+      break
     case AllowedActions.RESERVE:
-      // Initialize the request.
+      // Process the reservation.
       await reserve(reservation, issueTemplateBody, projectNumber)
 
       // Remove the initial reaction and add a thumbs up to indicate success.

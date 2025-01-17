@@ -1,5 +1,7 @@
 /** Allowed Activities for the Action */
 export enum AllowedActions {
+  /** Initialize the Reservation Request */
+  INIT = 'init',
   /** Confirm the Reservation Request */
   RESERVE = 'reserve',
   /** Cancel the Reservation Request */

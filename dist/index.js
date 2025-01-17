@@ -31264,6 +31264,8 @@ function dedent(templ) {
 /** Allowed Activities for the Action */
 var AllowedActions;
 (function (AllowedActions) {
+    /** Initialize the Reservation Request */
+    AllowedActions["INIT"] = "init";
     /** Confirm the Reservation Request */
     AllowedActions["RESERVE"] = "reserve";
     /** Cancel the Reservation Request */
@@ -31462,6 +31464,23 @@ async function cancel(reservation, issueTemplateBody, projectNumber) {
         state: 'closed',
         state_reason: 'not_planned'
     });
+    coreExports.endGroup();
+}
+
+/**
+ * Initializes the reservation request by performing the following steps:
+ *
+ * - Move the issue to the New Reservations project column.
+ *
+ * @param reservation The reservation request details.
+ * @param issueTemplateBody The body of the issue template.
+ * @param projectNumber The number of the project to move the issue in.
+ * @returns An error message if the request is invalid, undefined otherwise.
+ */
+async function init(reservation, issueTemplateBody, projectNumber) {
+    coreExports.startGroup('Processing Reservation Initialization...');
+    // Move the issue to the New Reservations project column.
+    await moveIssue(projectNumber, ProjectColumnNames.NEW);
     coreExports.endGroup();
 }
 
@@ -39243,26 +39262,28 @@ function getInputs() {
  * @return The ID of the reaction.
  */
 async function addReaction(content) {
+    coreExports.info(`Adding ${content} Reaction...`);
     // Do nothing if there is no issue/comment payload.
     if (githubExports.context.payload.issue === undefined)
         throw new Error('No Issue Payload Found');
     const octokit = githubExports.getOctokit(coreExports.getInput('github_token', { required: true }));
     // If there is a comment in the payload, add the reaction to the comment.
-    if (githubExports.context.payload.comment !== undefined)
-        return (await octokit.rest.reactions.createForIssueComment({
+    const response = githubExports.context.payload.comment !== undefined
+        ? await octokit.rest.reactions.createForIssueComment({
             owner: githubExports.context.repo.owner,
             repo: githubExports.context.repo.repo,
             issue_number: githubExports.context.payload.issue.number,
             comment_id: githubExports.context.payload.comment.id,
             content
-        })).data.id;
-    else
-        return (await octokit.rest.reactions.createForIssue({
+        })
+        : await octokit.rest.reactions.createForIssue({
             owner: githubExports.context.repo.owner,
             repo: githubExports.context.repo.repo,
             issue_number: githubExports.context.payload.issue.number,
             content
-        })).data.id;
+        });
+    coreExports.info(`Added ${content} Reaction: ${response.data.id}`);
+    return response.data.id;
 }
 /**
  * Removes a reaction from a specific issue or comment.
@@ -39339,8 +39360,15 @@ async function run() {
     coreExports.endGroup();
     // Depending on the action, run the appropriate function.
     switch (action) {
+        case AllowedActions.INIT:
+            // Process the reservation.
+            await init(reservation, issueTemplateBody, projectNumber);
+            // Remove the initial reaction and add a thumbs up to indicate success.
+            await removeReaction(initialReactionId);
+            await addReaction(Reaction.THUMBS_UP);
+            break;
         case AllowedActions.RESERVE:
-            // Initialize the request.
+            // Process the reservation.
             await reserve(reservation, issueTemplateBody, projectNumber);
             // Remove the initial reaction and add a thumbs up to indicate success.
             await removeReaction(initialReactionId);

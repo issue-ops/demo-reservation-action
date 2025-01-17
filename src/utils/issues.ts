@@ -9,6 +9,8 @@ import { Reaction } from '../enums.js'
  * @return The ID of the reaction.
  */
 export async function addReaction(content: Reaction): Promise<number> {
+  core.info(`Adding ${content} Reaction...`)
+
   // Do nothing if there is no issue/comment payload.
   if (github.context.payload.issue === undefined)
     throw new Error('No Issue Payload Found')
@@ -18,25 +20,24 @@ export async function addReaction(content: Reaction): Promise<number> {
   )
 
   // If there is a comment in the payload, add the reaction to the comment.
-  if (github.context.payload.comment !== undefined)
-    return (
-      await octokit.rest.reactions.createForIssueComment({
-        owner: github.context.repo.owner,
-        repo: github.context.repo.repo,
-        issue_number: github.context.payload.issue.number,
-        comment_id: github.context.payload.comment.id,
-        content
-      })
-    ).data.id
-  else
-    return (
-      await octokit.rest.reactions.createForIssue({
-        owner: github.context.repo.owner,
-        repo: github.context.repo.repo,
-        issue_number: github.context.payload.issue.number,
-        content
-      })
-    ).data.id
+  const response =
+    github.context.payload.comment !== undefined
+      ? await octokit.rest.reactions.createForIssueComment({
+          owner: github.context.repo.owner,
+          repo: github.context.repo.repo,
+          issue_number: github.context.payload.issue.number,
+          comment_id: github.context.payload.comment.id,
+          content
+        })
+      : await octokit.rest.reactions.createForIssue({
+          owner: github.context.repo.owner,
+          repo: github.context.repo.repo,
+          issue_number: github.context.payload.issue.number,
+          content
+        })
+
+  core.info(`Added ${content} Reaction: ${response.data.id}`)
+  return response.data.id
 }
 
 /**
