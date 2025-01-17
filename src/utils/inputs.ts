@@ -16,16 +16,16 @@ export function getInputs(): ActionInputs {
   const issueTemplatePath: string = core.getInput('issue_template_path', {
     required: true
   })
-  const projectId: number = Number(
-    core.getInput('project_id', { required: true })
+  const projectNumber: number = Number(
+    core.getInput('project_number', { required: true })
   )
   const workspace: string = core.getInput('workspace', { required: true })
 
-  core.startGroup('Running Action:')
+  core.startGroup('Running Action...')
   core.info(`  action: ${action}`)
-  core.info(`  issueBody: ${issueBody}`)
+  core.info(`  issueBody: ${JSON.stringify(issueBody)}`)
   core.info(`  issueTemplatePath: ${issueTemplatePath}`)
-  core.info(`  projectId: ${projectId}`)
+  core.info(`  projectNumber: ${projectNumber}`)
   core.info(`  workspace: ${workspace}`)
   core.endGroup()
 
@@ -33,7 +33,7 @@ export function getInputs(): ActionInputs {
     action,
     issueBody,
     issueTemplatePath,
-    projectId,
+    projectNumber,
     workspace
   }
 }

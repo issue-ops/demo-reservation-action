@@ -24,8 +24,8 @@ inputs:
       Path to the issue template file from the root of the repository (e.g.
       `.github/ISSUE_TEMPLATE/reservation.yml`).
     required: true
-  project_id:
-    description: The ID of the project board where reservations are managed.
+  project_number:
+    description: The number of the project board where reservations are managed.
     required: true
   workspace:
     description:

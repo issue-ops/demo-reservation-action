@@ -3,11 +3,15 @@ import * as github from '@actions/github'
 import { parseIssue } from '@github/issue-parser'
 import type { RestEndpointMethodTypes } from '@octokit/plugin-rest-endpoint-methods'
 import { readFileSync } from 'fs'
+import { dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import path from 'path'
 import { dedent } from 'ts-dedent'
 import { ProjectColumnNames } from '../enums.js'
 import { ReservationRequest, Room } from '../types.js'
 import { moveIssue } from '../utils/projects.js'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
 
 /**
  * Confirms the reservation request by performing the following steps:
@@ -19,15 +23,13 @@ import { moveIssue } from '../utils/projects.js'
  *
  * @param reservation The reservation request details.
  * @param issueTemplateBody The body of the issue template.
- * @param projectId The ID of the project to move the issue to.
- * @param workspace The path to the GitHub workspace.
+ * @param projectNumber The number of the project to move the issue in.
  * @returns An error message if the request is invalid, undefined otherwise.
  */
 export async function reserve(
   reservation: ReservationRequest,
   issueTemplateBody: string,
-  projectId: number,
-  workspace: string
+  projectNumber: number
 ): Promise<void> {
   core.startGroup('Processing Reservation Request...')
 
@@ -35,9 +37,11 @@ export async function reserve(
     core.getInput('github_token', { required: true })
   )
 
+  core.info('Getting Rooms')
+
   // Get the list of rooms from the JSON file.
   const rooms = JSON.parse(
-    readFileSync(path.join(workspace, 'src', 'rooms.json'), 'utf8')
+    readFileSync(path.join(__dirname, '..', 'rooms.json'), 'utf8')
   ) as Room[]
 
   core.info('Rooms JSON File:')
@@ -63,7 +67,6 @@ export async function reserve(
   // been submitted between the time the issue was opened and now.
   if (conflicting.length >= matching.length) {
     core.info('No Rooms Available!')
-    core.info(`Current Reservation Count: ${conflicting.length}`)
 
     await octokit.rest.issues.createComment({
       owner: github.context.repo.owner,
@@ -75,6 +78,7 @@ export async function reserve(
     })
 
     // Stop here! Do not add any labels or move the issue in the project.
+    core.endGroup()
     return
   }
 
@@ -87,7 +91,7 @@ export async function reserve(
   })
 
   // Move the issue to the Confirmed Reservations project column.
-  await moveIssue(projectId, ProjectColumnNames.CONFIRMED)
+  await moveIssue(projectNumber, ProjectColumnNames.CONFIRMED)
 
   // Add a comment to the issue with the results.
   await octokit.rest.issues.createComment({
@@ -98,6 +102,8 @@ export async function reserve(
 
     Hooray! Your reservation request has been confirmed! The total cost of your stay is **${matching[0].price}**. You can submit payment after conclusion of your stay, which will never happen, because this is a demo project.`
   })
+
+  core.endGroup()
 }
 
 /**
@@ -142,10 +148,12 @@ async function getConflictingReservations(
       labels: 'confirmed,reservation' // Confirmed reservations only.
     })
 
+  core.info(`Existing Reservations: ${issues.length}`)
+
   // Get a count of confirmed reservations that conflict with the selected
   // dates. A confirmed reservation conflicts if the start date or end date
   // falls within the range of the selected dates for the new reservation.
-  return issues.filter((issue) => {
+  const result = issues.filter((issue) => {
     // Parse the issue body to get the existing reservation details.
     const existingReservation = parseIssue(
       issue.body as string,
@@ -175,4 +183,8 @@ async function getConflictingReservations(
           new Date(existingReservation['check-out'] as string))
     )
   })
+
+  core.info(`Conflicting Reservations: ${result.length}`)
+
+  return result
 }

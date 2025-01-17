@@ -36,9 +36,9 @@ describe('main', () => {
   beforeEach(() => {
     getInputsMock.mockReturnValue({
       action: 'reserve',
-      issueBody: 'test',
+      issueBody: {},
       issueTemplatePath: 'reservation.yml',
-      projectId: 1,
+      projectNumber: 1,
       workspace: '/path/to/workspace'
     })
   })

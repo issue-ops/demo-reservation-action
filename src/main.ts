@@ -24,7 +24,7 @@ export async function run(): Promise<void> {
     return core.setFailed(`Invalid Workflow Trigger: ${eventName}`)
 
   // Get the action inputs.
-  const { action, issueBody, issueTemplatePath, projectId, workspace } =
+  const { action, issueBody, issueTemplatePath, projectNumber, workspace } =
     getInputs()
 
   // Fail if the specified action isn't valid.
@@ -45,16 +45,16 @@ export async function run(): Promise<void> {
 
   // Since the issue body was already parsed using the `issue-ops/parser`
   // action, we can access the parsed data from the `issueBody` property.
-  core.startGroup('Parsed Issue Body:')
+  core.startGroup('Parsed Issue Body...')
   core.info(JSON.stringify(issueBody, null, 2))
   core.endGroup()
 
   // Get the issue template body from the `issueTemplatePath` input.
   const issueTemplateBody = readFileSync(
-    path.join(workspace, '.github', 'ISSUE_TEMPLATE', issueTemplatePath),
+    path.join(workspace, issueTemplatePath),
     'utf8'
   )
-  core.startGroup('Issue Template Body:')
+  core.startGroup('Issue Template Body...')
   core.info(issueTemplateBody)
   core.endGroup()
 
@@ -72,7 +72,7 @@ export async function run(): Promise<void> {
     }
   }
 
-  core.startGroup('Parsed Reservation Request:')
+  core.startGroup('Parsed Reservation Request...')
   core.info(JSON.stringify(reservation, null, 2))
   core.endGroup()
 
@@ -80,7 +80,7 @@ export async function run(): Promise<void> {
   switch (action) {
     case AllowedActions.RESERVE:
       // Initialize the request.
-      await reserve(reservation, issueTemplateBody, projectId, workspace)
+      await reserve(reservation, issueTemplateBody, projectNumber)
 
       // Remove the initial reaction and add a thumbs up to indicate success.
       await removeReaction(initialReactionId)

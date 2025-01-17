@@ -27,6 +27,8 @@ import require$$6 from 'string_decoder';
 import require$$0$9 from 'diagnostics_channel';
 import require$$2$3 from 'child_process';
 import require$$6$1 from 'timers';
+import { dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
 
@@ -38947,25 +38949,82 @@ var RoomAmenity;
 /**
  * Moves an issue to a different column in a project board.
  *
- * @param projectId The ID of the project to move the issue in.
+ * @param projectNumber The number of the project to move the issue in.
  * @param column The name of the column to move the issue to.
  */
-async function moveIssue(projectId, column) {
+async function moveIssue(projectNumber, column) {
+    coreExports.info(`Moving to Project Column: ${column}...`);
     const octokit = githubExports.getOctokit(coreExports.getInput('github_token', { required: true }));
-    // Since we don't have the column IDs, we can fetch them from the project
-    // and use the column name to find the correct column ID.
-    const targetColumn = (await octokit.rest.projects.listColumns({
-        project_id: projectId
-    })).data.find((col) => col.name === column);
-    if (!targetColumn)
-        throw new Error(`Project Column Not Found: ${column}`);
-    await octokit.rest.projects.moveCard({
-        card_id: githubExports.context.payload.issue.node_id,
-        position: 'top',
-        column_id: targetColumn.id
+    // ProjectsV2 uses the GraphQL API. In this case, we need to get the `Status`
+    // field, the allowed options, and other metadata in order to change the value
+    // for the specific project item that corresponds to the issue.
+    const response = await octokit.graphql(`
+      query ($owner: String!, $repo: String!, $project: Int!, $issueNumber: Int!) {
+        repository(owner: $owner, name: $repo) {
+          issue(number: $issueNumber) {
+            projectItems(first: 1) {
+              nodes {
+                id
+                fieldValueByName(name: "Status") {
+                  ... on ProjectV2ItemFieldSingleSelectValue {
+                    name
+                    optionId
+                  }
+                }
+              }
+            }
+          }
+          projectV2(number: $project) {
+            id
+            field(name: "Status") {
+              ... on ProjectV2SingleSelectField {
+                id
+                name
+                options {
+                  id
+                  name
+                }
+              }
+            }
+          }
+        }
+      }
+    `, {
+        owner: githubExports.context.repo.owner,
+        repo: githubExports.context.repo.repo,
+        project: projectNumber,
+        issueNumber: githubExports.context.payload.issue.number
+    });
+    coreExports.info('GraphQL Response:');
+    coreExports.info(JSON.stringify(response, null, 2));
+    // Update the `Status` field for the issue in the project.
+    await octokit.graphql(`
+      mutation(
+        $fieldId: ID!,
+        $itemId: ID!,
+        $projectId: ID!,
+        $value: String!
+      ) {
+        updateProjectV2ItemFieldValue(input: {
+          fieldId: $fieldId,
+          itemId: $itemId,
+          projectId: $projectId,
+          value: { singleSelectOptionId: $value }
+        }) {
+          projectV2Item {
+            id
+          }
+        }
+      }
+    `, {
+        fieldId: response.repository.projectV2.field.id,
+        itemId: response.repository.issue.projectItems.nodes[0].id,
+        projectId: response.repository.projectV2.id,
+        value: response.repository.projectV2.field.options.find((option) => option.name === column).id
     });
 }
 
+const __dirname = dirname(fileURLToPath(import.meta.url));
 /**
  * Confirms the reservation request by performing the following steps:
  *
@@ -38976,15 +39035,15 @@ async function moveIssue(projectId, column) {
  *
  * @param reservation The reservation request details.
  * @param issueTemplateBody The body of the issue template.
- * @param projectId The ID of the project to move the issue to.
- * @param workspace The path to the GitHub workspace.
+ * @param projectNumber The number of the project to move the issue in.
  * @returns An error message if the request is invalid, undefined otherwise.
  */
-async function reserve(reservation, issueTemplateBody, projectId, workspace) {
+async function reserve(reservation, issueTemplateBody, projectNumber) {
     coreExports.startGroup('Processing Reservation Request...');
     const octokit = githubExports.getOctokit(coreExports.getInput('github_token', { required: true }));
+    coreExports.info('Getting Rooms');
     // Get the list of rooms from the JSON file.
-    const rooms = JSON.parse(readFileSync(require$$1$5.join(workspace, 'src', 'rooms.json'), 'utf8'));
+    const rooms = JSON.parse(readFileSync(require$$1$5.join(__dirname, '..', 'rooms.json'), 'utf8'));
     coreExports.info('Rooms JSON File:');
     coreExports.info(JSON.stringify(rooms, null, 2));
     // Get the rooms that match the room type from the JSON file.
@@ -38999,7 +39058,6 @@ async function reserve(reservation, issueTemplateBody, projectId, workspace) {
     // been submitted between the time the issue was opened and now.
     if (conflicting.length >= matching.length) {
         coreExports.info('No Rooms Available!');
-        coreExports.info(`Current Reservation Count: ${conflicting.length}`);
         await octokit.rest.issues.createComment({
             owner: githubExports.context.repo.owner,
             repo: githubExports.context.repo.repo,
@@ -39009,6 +39067,7 @@ async function reserve(reservation, issueTemplateBody, projectId, workspace) {
       All available rooms of this type have been booked for the selected dates. Please modify your request and try again!`
         });
         // Stop here! Do not add any labels or move the issue in the project.
+        coreExports.endGroup();
         return;
     }
     // Add the `confirmed` label to the issue.
@@ -39019,7 +39078,7 @@ async function reserve(reservation, issueTemplateBody, projectId, workspace) {
         labels: ['confirmed']
     });
     // Move the issue to the Confirmed Reservations project column.
-    await moveIssue(projectId, ProjectColumnNames.CONFIRMED);
+    await moveIssue(projectNumber, ProjectColumnNames.CONFIRMED);
     // Add a comment to the issue with the results.
     await octokit.rest.issues.createComment({
         owner: githubExports.context.repo.owner,
@@ -39029,6 +39088,7 @@ async function reserve(reservation, issueTemplateBody, projectId, workspace) {
 
     Hooray! Your reservation request has been confirmed! The total cost of your stay is **${matching[0].price}**. You can submit payment after conclusion of your stay, which will never happen, because this is a demo project.`
     });
+    coreExports.endGroup();
 }
 /**
  * Gets confirmed reservations that conflict with the selected date range. Any
@@ -39059,10 +39119,11 @@ async function getConflictingReservations(reservation, issueTemplateBody, owner,
         state: 'open', // Open issues only; closed are considered past reservations.
         labels: 'confirmed,reservation' // Confirmed reservations only.
     });
+    coreExports.info(`Existing Reservations: ${issues.length}`);
     // Get a count of confirmed reservations that conflict with the selected
     // dates. A confirmed reservation conflicts if the start date or end date
     // falls within the range of the selected dates for the new reservation.
-    return issues.filter((issue) => {
+    const result = issues.filter((issue) => {
         // Parse the issue body to get the existing reservation details.
         const existingReservation = parseIssue(issue.body, issueTemplateBody);
         // Ignore reservations where the room type does not match.
@@ -39087,6 +39148,8 @@ async function getConflictingReservations(reservation, issueTemplateBody, owner,
                 reservation.checkOut >=
                     new Date(existingReservation['check-out'])));
     });
+    coreExports.info(`Conflicting Reservations: ${result.length}`);
+    return result;
 }
 
 /**
@@ -39101,20 +39164,20 @@ function getInputs() {
     const issueTemplatePath = coreExports.getInput('issue_template_path', {
         required: true
     });
-    const projectId = Number(coreExports.getInput('project_id', { required: true }));
+    const projectNumber = Number(coreExports.getInput('project_number', { required: true }));
     const workspace = coreExports.getInput('workspace', { required: true });
-    coreExports.startGroup('Running Action:');
+    coreExports.startGroup('Running Action...');
     coreExports.info(`  action: ${action}`);
-    coreExports.info(`  issueBody: ${issueBody}`);
+    coreExports.info(`  issueBody: ${JSON.stringify(issueBody)}`);
     coreExports.info(`  issueTemplatePath: ${issueTemplatePath}`);
-    coreExports.info(`  projectId: ${projectId}`);
+    coreExports.info(`  projectNumber: ${projectNumber}`);
     coreExports.info(`  workspace: ${workspace}`);
     coreExports.endGroup();
     return {
         action,
         issueBody,
         issueTemplatePath,
-        projectId,
+        projectNumber,
         workspace
     };
 }
@@ -39183,7 +39246,7 @@ async function run() {
     if (!Object.values(AllowedTriggers).includes(eventName))
         return coreExports.setFailed(`Invalid Workflow Trigger: ${eventName}`);
     // Get the action inputs.
-    const { action, issueBody, issueTemplatePath, projectId, workspace } = getInputs();
+    const { action, issueBody, issueTemplatePath, projectNumber, workspace } = getInputs();
     // Fail if the specified action isn't valid.
     if (!Object.values(AllowedActions).includes(action))
         return coreExports.setFailed(`Invalid Action: ${action}`);
@@ -39199,12 +39262,12 @@ async function run() {
     const initialReactionId = await addReaction(Reaction.EYES);
     // Since the issue body was already parsed using the `issue-ops/parser`
     // action, we can access the parsed data from the `issueBody` property.
-    coreExports.startGroup('Parsed Issue Body:');
+    coreExports.startGroup('Parsed Issue Body...');
     coreExports.info(JSON.stringify(issueBody, null, 2));
     coreExports.endGroup();
     // Get the issue template body from the `issueTemplatePath` input.
-    const issueTemplateBody = readFileSync(require$$1$5.join(workspace, '.github', 'ISSUE_TEMPLATE', issueTemplatePath), 'utf8');
-    coreExports.startGroup('Issue Template Body:');
+    const issueTemplateBody = readFileSync(require$$1$5.join(workspace, issueTemplatePath), 'utf8');
+    coreExports.startGroup('Issue Template Body...');
     coreExports.info(issueTemplateBody);
     coreExports.endGroup();
     // (Optional) Convert the parsed issue body to a more strongly-typed object.
@@ -39217,14 +39280,14 @@ async function run() {
         room: issueBody.room[0],
         amenities: issueBody.amenities
     };
-    coreExports.startGroup('Parsed Reservation Request:');
+    coreExports.startGroup('Parsed Reservation Request...');
     coreExports.info(JSON.stringify(reservation, null, 2));
     coreExports.endGroup();
     // Depending on the action, run the appropriate function.
     switch (action) {
         case AllowedActions.RESERVE:
             // Initialize the request.
-            await reserve(reservation, issueTemplateBody, projectId, workspace);
+            await reserve(reservation, issueTemplateBody, projectNumber);
             // Remove the initial reaction and add a thumbs up to indicate success.
             await removeReaction(initialReactionId);
             await addReaction(Reaction.THUMBS_UP);

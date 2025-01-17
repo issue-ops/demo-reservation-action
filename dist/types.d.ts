@@ -1,11 +1,11 @@
 import type { ParsedBody } from '@github/issue-parser';
-import type { RoomAmenity, RoomType } from './enums.js';
+import type { ProjectColumnNames, RoomAmenity, RoomType } from './enums.js';
 /** Action Inputs */
 export type ActionInputs = {
     action: string;
     issueBody: ParsedBody;
     issueTemplatePath: string;
-    projectId: number;
+    projectNumber: number;
     workspace: string;
 };
 /** Reasons for Issue Closure */
@@ -33,4 +33,31 @@ export type Room = {
     price: number;
     max_guests: number;
     amenities: RoomAmenity[];
+};
+/** GraphQL ProjectsV2 Query Response */
+export type GraphQlProjectsV2QueryResponse = {
+    repository: {
+        issue: {
+            projectItems: {
+                nodes: {
+                    id: string;
+                    fieldValueByName: {
+                        name: ProjectColumnNames;
+                        optionId: string;
+                    };
+                }[];
+            };
+        };
+        projectV2: {
+            id: string;
+            field: {
+                id: string;
+                name: string;
+                options: {
+                    id: string;
+                    name: ProjectColumnNames;
+                }[];
+            };
+        };
+    };
 };
