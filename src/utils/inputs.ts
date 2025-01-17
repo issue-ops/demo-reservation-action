@@ -13,9 +13,7 @@ export function getInputs(): ActionInputs {
   const issueBody: ParsedBody = JSON.parse(
     core.getInput('issue_body', { required: true })
   )
-  const issueTemplatePath: string = core.getInput('issue_template_path', {
-    required: true
-  })
+  const issueTemplatePath: string = core.getInput('issue_template_path')
   const projectNumber: number = Number(
     core.getInput('project_number', { required: true })
   )

@@ -39217,9 +39217,7 @@ function getInputs() {
     // Get the action inputs.
     const action = coreExports.getInput('action', { required: true });
     const issueBody = JSON.parse(coreExports.getInput('issue_body', { required: true }));
-    const issueTemplatePath = coreExports.getInput('issue_template_path', {
-        required: true
-    });
+    const issueTemplatePath = coreExports.getInput('issue_template_path');
     const projectNumber = Number(coreExports.getInput('project_number', { required: true }));
     const workspace = coreExports.getInput('workspace', { required: true });
     coreExports.startGroup('Running Action...');
