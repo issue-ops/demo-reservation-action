@@ -2,6 +2,7 @@ import * as core from '@actions/core'
 import * as github from '@actions/github'
 import { readFileSync } from 'fs'
 import path from 'path'
+import { cancel } from './actions/cancel.js'
 import { reserve } from './actions/reserve.js'
 import {
   AllowedActions,
@@ -87,8 +88,7 @@ export async function run(): Promise<void> {
       await addReaction(Reaction.THUMBS_UP)
       break
     case AllowedActions.CANCEL:
-      // return await submit()
-      core.info('Cancel action not implemented yet')
+      await cancel(reservation, issueTemplateBody, projectNumber)
 
       // Remove the initial reaction and add a thumbs up to indicate success.
       await removeReaction(initialReactionId)

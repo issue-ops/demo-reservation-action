@@ -100,7 +100,14 @@ export async function reserve(
     issue_number: github.context.payload.issue!.number,
     body: dedent`### :calendar: Reservation Request Confirmed
 
-    Hooray! Your reservation request has been confirmed! The total cost of your stay is **${matching[0].price}**. You can submit payment after conclusion of your stay, which will never happen, because this is a demo project.`
+    Hooray! Your reservation request has been confirmed! The total cost of your stay is **${matching[0].price}**. You can submit payment after conclusion of your stay, which will never happen, because this is a demo project.
+
+    If you would like to cancel your reservation, you can do either of the following:
+
+    - Comment on the issue with \`/cancel\`
+    - Close the issue
+
+    Please note, if you cancel your reservation, you will not be refunded the cost of your stay. This is because you didn't pay anything to begin with.`
   })
 
   core.endGroup()

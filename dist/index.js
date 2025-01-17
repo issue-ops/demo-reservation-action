@@ -31224,6 +31224,247 @@ function requireGithub () {
 
 var githubExports = requireGithub();
 
+function dedent(templ) {
+    var values = [];
+    for (var _i = 1; _i < arguments.length; _i++) {
+        values[_i - 1] = arguments[_i];
+    }
+    var strings = Array.from(typeof templ === 'string' ? [templ] : templ);
+    strings[strings.length - 1] = strings[strings.length - 1].replace(/\r?\n([\t ]*)$/, '');
+    var indentLengths = strings.reduce(function (arr, str) {
+        var matches = str.match(/\n([\t ]+|(?!\s).)/g);
+        if (matches) {
+            return arr.concat(matches.map(function (match) { var _a, _b; return (_b = (_a = match.match(/[\t ]/g)) === null || _a === void 0 ? void 0 : _a.length) !== null && _b !== void 0 ? _b : 0; }));
+        }
+        return arr;
+    }, []);
+    if (indentLengths.length) {
+        var pattern_1 = new RegExp("\n[\t ]{" + Math.min.apply(Math, indentLengths) + "}", 'g');
+        strings = strings.map(function (str) { return str.replace(pattern_1, '\n'); });
+    }
+    strings[0] = strings[0].replace(/^\r?\n/, '');
+    var string = strings[0];
+    values.forEach(function (value, i) {
+        var endentations = string.match(/(?:^|\n)( *)$/);
+        var endentation = endentations ? endentations[1] : '';
+        var indentedValue = value;
+        if (typeof value === 'string' && value.includes('\n')) {
+            indentedValue = String(value)
+                .split('\n')
+                .map(function (str, i) {
+                return i === 0 ? str : "" + endentation + str;
+            })
+                .join('\n');
+        }
+        string += indentedValue + strings[i + 1];
+    });
+    return string;
+}
+
+/** Allowed Activities for the Action */
+var AllowedActions;
+(function (AllowedActions) {
+    /** Confirm the Reservation Request */
+    AllowedActions["RESERVE"] = "reserve";
+    /** Cancel the Reservation Request */
+    AllowedActions["CANCEL"] = "cancel";
+    /** Expire the Reservation Request */
+    AllowedActions["EXPIRE"] = "expire";
+})(AllowedActions || (AllowedActions = {}));
+/** Allowed Triggers for the Action */
+var AllowedTriggers;
+(function (AllowedTriggers) {
+    /** Issue Events */
+    AllowedTriggers["ISSUES"] = "issues";
+    /** Issue Comment Events */
+    AllowedTriggers["ISSUE_COMMENT"] = "issue_comment";
+    /** Schedule Events */
+    AllowedTriggers["SCHEDULE"] = "schedule";
+})(AllowedTriggers || (AllowedTriggers = {}));
+/** Project Column Names */
+var ProjectColumnNames;
+(function (ProjectColumnNames) {
+    /** New Reservations */
+    ProjectColumnNames["NEW"] = "New Reservations";
+    /** Confirmed Reservations */
+    ProjectColumnNames["CONFIRMED"] = "Confirmed Reservations";
+    /** Expired Reservations */
+    ProjectColumnNames["EXPIRED"] = "Expired Reservations";
+    /** Cancelled Reservations */
+    ProjectColumnNames["CANCELLED"] = "Cancelled Reservations";
+})(ProjectColumnNames || (ProjectColumnNames = {}));
+/** Issue and Comment Reaction Options */
+var Reaction;
+(function (Reaction) {
+    /** Thumbs Up */
+    Reaction["THUMBS_UP"] = "+1";
+    /** Thumbs Down */
+    Reaction["THUMBS_DOWN"] = "-1";
+    /** Laugh */
+    Reaction["LAUGH"] = "laugh";
+    /** Confused */
+    Reaction["CONFUSED"] = "confused";
+    /** Heart */
+    Reaction["HEART"] = "heart";
+    /** Hooray */
+    Reaction["HOORAY"] = "hooray";
+    /** Rocket */
+    Reaction["ROCKET"] = "rocket";
+    /** Eyes */
+    Reaction["EYES"] = "eyes";
+})(Reaction || (Reaction = {}));
+/** Available Room Types */
+var RoomType;
+(function (RoomType) {
+    /** Single Queen Room */
+    RoomType["SINGLE"] = "Single Queen";
+    /** Double Queen Room */
+    RoomType["DOUBLE"] = "Double Queen";
+    /** King Suite */
+    RoomType["SUITE"] = "King Suite";
+})(RoomType || (RoomType = {}));
+/** Available Room Amenities */
+var RoomAmenity;
+(function (RoomAmenity) {
+    /** Breakfast Included */
+    RoomAmenity["BREAKFAST"] = "Breakfast";
+    /** Lunch Included */
+    RoomAmenity["LUNCH"] = "Lunch";
+    /** Dinner Included */
+    RoomAmenity["DINNER"] = "Dinner";
+    /** Wi-Fi Included */
+    RoomAmenity["WIFI"] = "Wi-Fi";
+    /** Hot Tub */
+    RoomAmenity["HOT_TUB"] = "Hot Tub";
+})(RoomAmenity || (RoomAmenity = {}));
+
+/**
+ * Moves an issue to a different column in a project board.
+ *
+ * @param projectNumber The number of the project to move the issue in.
+ * @param column The name of the column to move the issue to.
+ */
+async function moveIssue(projectNumber, column) {
+    coreExports.info(`Moving to Project Column: ${column}...`);
+    const octokit = githubExports.getOctokit(coreExports.getInput('github_token', { required: true }));
+    // ProjectsV2 uses the GraphQL API. In this case, we need to get the `Status`
+    // field, the allowed options, and other metadata in order to change the value
+    // for the specific project item that corresponds to the issue.
+    const response = await octokit.graphql(`
+      query ($owner: String!, $repo: String!, $project: Int!, $issueNumber: Int!) {
+        repository(owner: $owner, name: $repo) {
+          issue(number: $issueNumber) {
+            projectItems(first: 1) {
+              nodes {
+                id
+                fieldValueByName(name: "Status") {
+                  ... on ProjectV2ItemFieldSingleSelectValue {
+                    name
+                    optionId
+                  }
+                }
+              }
+            }
+          }
+          projectV2(number: $project) {
+            id
+            field(name: "Status") {
+              ... on ProjectV2SingleSelectField {
+                id
+                name
+                options {
+                  id
+                  name
+                }
+              }
+            }
+          }
+        }
+      }
+    `, {
+        owner: githubExports.context.repo.owner,
+        repo: githubExports.context.repo.repo,
+        project: projectNumber,
+        issueNumber: githubExports.context.payload.issue.number
+    });
+    coreExports.info('GraphQL Response:');
+    coreExports.info(JSON.stringify(response, null, 2));
+    // Update the `Status` field for the issue in the project.
+    await octokit.graphql(`
+      mutation(
+        $fieldId: ID!,
+        $itemId: ID!,
+        $projectId: ID!,
+        $value: String!
+      ) {
+        updateProjectV2ItemFieldValue(input: {
+          fieldId: $fieldId,
+          itemId: $itemId,
+          projectId: $projectId,
+          value: { singleSelectOptionId: $value }
+        }) {
+          projectV2Item {
+            id
+          }
+        }
+      }
+    `, {
+        fieldId: response.repository.projectV2.field.id,
+        itemId: response.repository.issue.projectItems.nodes[0].id,
+        projectId: response.repository.projectV2.id,
+        value: response.repository.projectV2.field.options.find((option) => option.name === column).id
+    });
+}
+
+/**
+ * Cancels the reservation request by performing the following steps:
+ *
+ * - Add the `cancelled` label to the issue.
+ * - Move the issue to the Cancelled Reservations project column.
+ * - Add a comment to the issue with the results.
+ * - If not closed already, closes the issue.
+ *
+ * @param reservation The reservation request details.
+ * @param issueTemplateBody The body of the issue template.
+ * @param projectNumber The number of the project to move the issue in.
+ * @returns An error message if the request is invalid, undefined otherwise.
+ */
+async function cancel(reservation, issueTemplateBody, projectNumber) {
+    coreExports.startGroup('Processing Cancellation Request...');
+    const octokit = githubExports.getOctokit(coreExports.getInput('github_token', { required: true }));
+    // Add the `confirmed` label to the issue.
+    await octokit.rest.issues.addLabels({
+        owner: githubExports.context.repo.owner,
+        repo: githubExports.context.repo.repo,
+        issue_number: githubExports.context.payload.issue.number,
+        labels: ['cancelled']
+    });
+    // Move the issue to the Confirmed Reservations project column.
+    await moveIssue(projectNumber, ProjectColumnNames.CANCELLED);
+    // Add a comment to the issue with the results.
+    await octokit.rest.issues.createComment({
+        owner: githubExports.context.repo.owner,
+        repo: githubExports.context.repo.repo,
+        issue_number: githubExports.context.payload.issue.number,
+        body: dedent `### :calendar: Reservation Request Cancelled
+
+    Your reservation request has been cancelled! We are sorry that you have chosen to cancel your stay at Bear Creek Honey Farm.
+
+    However, it is probably for the best. This is a completely fictional location and we don't have any rooms to offer you.
+
+    Thank you for trying our IssueOps demonstration!`
+    });
+    // Close the issue.
+    await octokit.rest.issues.update({
+        owner: githubExports.context.repo.owner,
+        repo: githubExports.context.repo.repo,
+        issue_number: githubExports.context.payload.issue.number,
+        state: 'closed',
+        state_reason: 'not_planned'
+    });
+    coreExports.endGroup();
+}
+
 const ALIAS = Symbol.for('yaml.alias');
 const DOC = Symbol.for('yaml.document');
 const MAP = Symbol.for('yaml.map');
@@ -38832,198 +39073,6 @@ function parseTemplate(template) {
     return parsedTemplate;
 }
 
-function dedent(templ) {
-    var values = [];
-    for (var _i = 1; _i < arguments.length; _i++) {
-        values[_i - 1] = arguments[_i];
-    }
-    var strings = Array.from(typeof templ === 'string' ? [templ] : templ);
-    strings[strings.length - 1] = strings[strings.length - 1].replace(/\r?\n([\t ]*)$/, '');
-    var indentLengths = strings.reduce(function (arr, str) {
-        var matches = str.match(/\n([\t ]+|(?!\s).)/g);
-        if (matches) {
-            return arr.concat(matches.map(function (match) { var _a, _b; return (_b = (_a = match.match(/[\t ]/g)) === null || _a === void 0 ? void 0 : _a.length) !== null && _b !== void 0 ? _b : 0; }));
-        }
-        return arr;
-    }, []);
-    if (indentLengths.length) {
-        var pattern_1 = new RegExp("\n[\t ]{" + Math.min.apply(Math, indentLengths) + "}", 'g');
-        strings = strings.map(function (str) { return str.replace(pattern_1, '\n'); });
-    }
-    strings[0] = strings[0].replace(/^\r?\n/, '');
-    var string = strings[0];
-    values.forEach(function (value, i) {
-        var endentations = string.match(/(?:^|\n)( *)$/);
-        var endentation = endentations ? endentations[1] : '';
-        var indentedValue = value;
-        if (typeof value === 'string' && value.includes('\n')) {
-            indentedValue = String(value)
-                .split('\n')
-                .map(function (str, i) {
-                return i === 0 ? str : "" + endentation + str;
-            })
-                .join('\n');
-        }
-        string += indentedValue + strings[i + 1];
-    });
-    return string;
-}
-
-/** Allowed Activities for the Action */
-var AllowedActions;
-(function (AllowedActions) {
-    /** Confirm the Reservation Request */
-    AllowedActions["RESERVE"] = "reserve";
-    /** Cancel the Reservation Request */
-    AllowedActions["CANCEL"] = "cancel";
-    /** Expire the Reservation Request */
-    AllowedActions["EXPIRE"] = "expire";
-})(AllowedActions || (AllowedActions = {}));
-/** Allowed Triggers for the Action */
-var AllowedTriggers;
-(function (AllowedTriggers) {
-    /** Issue Events */
-    AllowedTriggers["ISSUES"] = "issues";
-    /** Issue Comment Events */
-    AllowedTriggers["ISSUE_COMMENT"] = "issue_comment";
-    /** Schedule Events */
-    AllowedTriggers["SCHEDULE"] = "schedule";
-})(AllowedTriggers || (AllowedTriggers = {}));
-/** Project Column Names */
-var ProjectColumnNames;
-(function (ProjectColumnNames) {
-    /** New Reservations */
-    ProjectColumnNames["NEW"] = "New Reservations";
-    /** Confirmed Reservations */
-    ProjectColumnNames["CONFIRMED"] = "Confirmed Reservations";
-    /** Expired Reservations */
-    ProjectColumnNames["EXPIRED"] = "Expired Reservations";
-    /** Cancelled Reservations */
-    ProjectColumnNames["CANCELLED"] = "Cancelled Reservations";
-})(ProjectColumnNames || (ProjectColumnNames = {}));
-/** Issue and Comment Reaction Options */
-var Reaction;
-(function (Reaction) {
-    /** Thumbs Up */
-    Reaction["THUMBS_UP"] = "+1";
-    /** Thumbs Down */
-    Reaction["THUMBS_DOWN"] = "-1";
-    /** Laugh */
-    Reaction["LAUGH"] = "laugh";
-    /** Confused */
-    Reaction["CONFUSED"] = "confused";
-    /** Heart */
-    Reaction["HEART"] = "heart";
-    /** Hooray */
-    Reaction["HOORAY"] = "hooray";
-    /** Rocket */
-    Reaction["ROCKET"] = "rocket";
-    /** Eyes */
-    Reaction["EYES"] = "eyes";
-})(Reaction || (Reaction = {}));
-/** Available Room Types */
-var RoomType;
-(function (RoomType) {
-    /** Single Queen Room */
-    RoomType["SINGLE"] = "Single Queen";
-    /** Double Queen Room */
-    RoomType["DOUBLE"] = "Double Queen";
-    /** King Suite */
-    RoomType["SUITE"] = "King Suite";
-})(RoomType || (RoomType = {}));
-/** Available Room Amenities */
-var RoomAmenity;
-(function (RoomAmenity) {
-    /** Breakfast Included */
-    RoomAmenity["BREAKFAST"] = "Breakfast";
-    /** Lunch Included */
-    RoomAmenity["LUNCH"] = "Lunch";
-    /** Dinner Included */
-    RoomAmenity["DINNER"] = "Dinner";
-    /** Wi-Fi Included */
-    RoomAmenity["WIFI"] = "Wi-Fi";
-    /** Hot Tub */
-    RoomAmenity["HOT_TUB"] = "Hot Tub";
-})(RoomAmenity || (RoomAmenity = {}));
-
-/**
- * Moves an issue to a different column in a project board.
- *
- * @param projectNumber The number of the project to move the issue in.
- * @param column The name of the column to move the issue to.
- */
-async function moveIssue(projectNumber, column) {
-    coreExports.info(`Moving to Project Column: ${column}...`);
-    const octokit = githubExports.getOctokit(coreExports.getInput('github_token', { required: true }));
-    // ProjectsV2 uses the GraphQL API. In this case, we need to get the `Status`
-    // field, the allowed options, and other metadata in order to change the value
-    // for the specific project item that corresponds to the issue.
-    const response = await octokit.graphql(`
-      query ($owner: String!, $repo: String!, $project: Int!, $issueNumber: Int!) {
-        repository(owner: $owner, name: $repo) {
-          issue(number: $issueNumber) {
-            projectItems(first: 1) {
-              nodes {
-                id
-                fieldValueByName(name: "Status") {
-                  ... on ProjectV2ItemFieldSingleSelectValue {
-                    name
-                    optionId
-                  }
-                }
-              }
-            }
-          }
-          projectV2(number: $project) {
-            id
-            field(name: "Status") {
-              ... on ProjectV2SingleSelectField {
-                id
-                name
-                options {
-                  id
-                  name
-                }
-              }
-            }
-          }
-        }
-      }
-    `, {
-        owner: githubExports.context.repo.owner,
-        repo: githubExports.context.repo.repo,
-        project: projectNumber,
-        issueNumber: githubExports.context.payload.issue.number
-    });
-    coreExports.info('GraphQL Response:');
-    coreExports.info(JSON.stringify(response, null, 2));
-    // Update the `Status` field for the issue in the project.
-    await octokit.graphql(`
-      mutation(
-        $fieldId: ID!,
-        $itemId: ID!,
-        $projectId: ID!,
-        $value: String!
-      ) {
-        updateProjectV2ItemFieldValue(input: {
-          fieldId: $fieldId,
-          itemId: $itemId,
-          projectId: $projectId,
-          value: { singleSelectOptionId: $value }
-        }) {
-          projectV2Item {
-            id
-          }
-        }
-      }
-    `, {
-        fieldId: response.repository.projectV2.field.id,
-        itemId: response.repository.issue.projectItems.nodes[0].id,
-        projectId: response.repository.projectV2.id,
-        value: response.repository.projectV2.field.options.find((option) => option.name === column).id
-    });
-}
-
 const __dirname = dirname(fileURLToPath(import.meta.url));
 /**
  * Confirms the reservation request by performing the following steps:
@@ -39086,7 +39135,14 @@ async function reserve(reservation, issueTemplateBody, projectNumber) {
         issue_number: githubExports.context.payload.issue.number,
         body: dedent `### :calendar: Reservation Request Confirmed
 
-    Hooray! Your reservation request has been confirmed! The total cost of your stay is **${matching[0].price}**. You can submit payment after conclusion of your stay, which will never happen, because this is a demo project.`
+    Hooray! Your reservation request has been confirmed! The total cost of your stay is **${matching[0].price}**. You can submit payment after conclusion of your stay, which will never happen, because this is a demo project.
+
+    If you would like to cancel your reservation, you can do either of the following:
+
+    - Comment on the issue with \`/cancel\`
+    - Close the issue
+
+    Please note, if you cancel your reservation, you will not be refunded the cost of your stay. This is because you didn't pay anything to begin with.`
     });
     coreExports.endGroup();
 }
@@ -39293,8 +39349,7 @@ async function run() {
             await addReaction(Reaction.THUMBS_UP);
             break;
         case AllowedActions.CANCEL:
-            // return await submit()
-            coreExports.info('Cancel action not implemented yet');
+            await cancel(reservation, issueTemplateBody, projectNumber);
             // Remove the initial reaction and add a thumbs up to indicate success.
             await removeReaction(initialReactionId);
             await addReaction(Reaction.THUMBS_UP);
