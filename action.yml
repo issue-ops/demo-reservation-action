@@ -8,7 +8,7 @@ branding:
 
 inputs:
   action:
-    description: The action to take (`init`, `reserve`, `cancel`, or 'expire').
+    description: The action to take (`init`, `reserve`, `cancel`, or `expire`).
     required: true
   github_token:
     description: The GitHub token to use for interacting with the GitHub API.
