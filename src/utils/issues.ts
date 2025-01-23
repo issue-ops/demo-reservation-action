@@ -1,6 +1,6 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
-import { Reaction } from '../enums.js'
+import type { Reaction } from '../enums.js'
 
 /**
  * Adds a reaction to a specific issue or comment.
@@ -20,6 +20,7 @@ export async function addReaction(content: Reaction): Promise<number> {
   )
 
   // If there is a comment in the payload, add the reaction to the comment.
+  // Otherwise, add it to the issue.
   const response =
     github.context.payload.comment !== undefined
       ? await octokit.rest.reactions.createForIssueComment({
@@ -55,6 +56,7 @@ export async function removeReaction(id: number): Promise<void> {
   )
 
   // If there is a comment in the payload, remove the reaction from the comment.
+  // Otherwise, remove it from the issue.
   if (github.context.payload.comment !== undefined)
     await octokit.rest.reactions.deleteForIssueComment({
       owner: github.context.repo.owner,

@@ -1,4 +1,4 @@
-import { ActionInputs } from '../types.js';
+import type { ActionInputs } from '../types.js';
 /**
  * Gets all the inputs from the GitHub Actions workflow (except the token).
  *

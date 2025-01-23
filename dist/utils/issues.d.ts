@@ -1,4 +1,4 @@
-import { Reaction } from '../enums.js';
+import type { Reaction } from '../enums.js';
 /**
  * Adds a reaction to a specific issue or comment.
  *

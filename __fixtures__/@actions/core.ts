@@ -1,3 +1,6 @@
+/**
+ * Test Fixture for @actions/core
+ */
 import { jest } from '@jest/globals'
 
 export const debug = jest.fn()

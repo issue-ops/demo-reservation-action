@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url'
 import path from 'path'
 import { dedent } from 'ts-dedent'
 import { ProjectColumnNames } from '../enums.js'
-import { ReservationRequest, Room } from '../types.js'
+import type { ReservationRequest, Room } from '../types.js'
 import { moveIssue } from '../utils/projects.js'
 
 /**

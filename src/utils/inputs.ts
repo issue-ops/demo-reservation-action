@@ -1,6 +1,6 @@
 import * as core from '@actions/core'
 import type { ParsedBody } from '@github/issue-parser'
-import { ActionInputs } from '../types.js'
+import type { ActionInputs } from '../types.js'
 
 /**
  * Gets all the inputs from the GitHub Actions workflow (except the token).

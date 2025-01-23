@@ -1,3 +1,6 @@
+/**
+ * Test Fixture for @octokit/rest.js
+ */
 import { jest } from '@jest/globals'
 import { Endpoints } from '@octokit/types'
 

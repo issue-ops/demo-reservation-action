@@ -1,4 +1,4 @@
-import { ProjectColumnNames } from '../enums.js';
+import type { ProjectColumnNames } from '../enums.js';
 /**
  * Moves an issue to a different column in a project board.
  *

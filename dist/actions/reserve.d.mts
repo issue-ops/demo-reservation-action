@@ -1,4 +1,4 @@
-import { ReservationRequest } from '../types.js';
+import type { ReservationRequest } from '../types.js';
 /**
  * Confirms the reservation request by performing the following steps:
  *

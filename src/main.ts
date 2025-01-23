@@ -13,12 +13,14 @@ import {
   RoomAmenity,
   RoomType
 } from './enums.js'
-import { ReservationRequest } from './types.js'
+import type { ReservationRequest } from './types.js'
 import { getInputs } from './utils/inputs.js'
 import { addReaction, removeReaction } from './utils/issues.js'
 
 /**
  * The entrypoint for the action.
+ *
+ * Determines which task to run based on the action input.
  */
 export async function run(): Promise<void> {
   // Fail if the action is being run on an unsupported event type.

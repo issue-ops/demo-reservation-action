@@ -1,3 +1,7 @@
+/**
+ * Test Fixture for @actions/github
+ */
+import type { Context } from '@actions/github/lib/context.js'
 import * as octokit from '../@octokit/rest.js'
 
 export const getOctokit = () => octokit
@@ -20,4 +24,4 @@ export const context = {
     //   id: 1
     // }
   }
-}
+} as Context

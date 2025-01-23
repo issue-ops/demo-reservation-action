@@ -1,7 +1,7 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
 import { parseIssue } from '@github/issue-parser'
-import { RestEndpointMethodTypes } from '@octokit/plugin-rest-endpoint-methods'
+import type { RestEndpointMethodTypes } from '@octokit/plugin-rest-endpoint-methods'
 import { dedent } from 'ts-dedent'
 import { ProjectColumnNames } from '../enums.js'
 import { moveIssue } from '../utils/projects.js'

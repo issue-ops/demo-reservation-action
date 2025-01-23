@@ -10,6 +10,15 @@ import type { reserve } from '../src/actions/reserve.mjs'
 import { getInputs } from '../src/utils/inputs.js'
 import type { addReaction } from '../src/utils/issues.js'
 
+// Mock external modules that are called by the code under test
+jest.unstable_mockModule('@actions/core', () => core)
+jest.unstable_mockModule('@actions/github', () => github)
+jest.unstable_mockModule('@github/issue-parser', () => ({
+  parseIssue: parseIssueMock
+}))
+jest.unstable_mockModule('fs', () => fs)
+
+// Mock internal modules that are called by the code under test
 const getInputsMock = jest.fn<typeof getInputs>()
 const addReactionMock = jest.fn<typeof addReaction>()
 const removeReactionMock = jest.fn<typeof addReaction>()
@@ -19,12 +28,6 @@ const expireMock = jest.fn<typeof expire>()
 const initMock = jest.fn<typeof init>()
 const cancelMock = jest.fn<typeof cancel>()
 
-jest.unstable_mockModule('@actions/core', () => core)
-jest.unstable_mockModule('@actions/github', () => github)
-jest.unstable_mockModule('@github/issue-parser', () => ({
-  parseIssue: parseIssueMock
-}))
-jest.unstable_mockModule('fs', () => fs)
 jest.unstable_mockModule('../src/utils/inputs.js', () => ({
   getInputs: getInputsMock
 }))
@@ -45,6 +48,7 @@ jest.unstable_mockModule('../src/actions/cancel.js', () => ({
   cancel: cancelMock
 }))
 
+// Import the code under test
 const main = await import('../src/main.js')
 
 const inputFactory = () => ({

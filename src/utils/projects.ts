@@ -1,6 +1,6 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
-import { ProjectColumnNames } from '../enums.js'
+import type { ProjectColumnNames } from '../enums.js'
 import type { GraphQlProjectsV2QueryResponse } from '../types.js'
 
 /**

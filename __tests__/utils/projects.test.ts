@@ -4,6 +4,7 @@ import * as github from '../../__fixtures__/@actions/github.js'
 import * as octokit from '../../__fixtures__/@octokit/rest.js'
 import { ProjectColumnNames } from '../../src/enums.js'
 
+// Mock external modules that are called by the code under test
 jest.unstable_mockModule('@actions/core', () => core)
 jest.unstable_mockModule('@actions/github', () => github)
 jest.unstable_mockModule('@octokit/rest', async () => {
@@ -18,8 +19,10 @@ jest.unstable_mockModule('@octokit/rest', async () => {
   }
 })
 
+// Import the code under test
 const projects = await import('../../src/utils/projects.js')
 
+// Create a mock instance of the Octokit class
 const { Octokit } = await import('@octokit/rest')
 const mocktokit = jest.mocked(new Octokit())
 

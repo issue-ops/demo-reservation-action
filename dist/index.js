@@ -12,7 +12,7 @@ import require$$0$2 from 'util';
 import require$$0$4 from 'stream';
 import require$$7 from 'buffer';
 import require$$8 from 'querystring';
-import require$$13 from 'stream/web';
+import require$$14 from 'stream/web';
 import require$$0$7 from 'node:stream';
 import require$$1$2 from 'node:util';
 import require$$0$6 from 'node:events';
@@ -1499,7 +1499,7 @@ function requireUtil$6 () {
 	let ReadableStream;
 	function ReadableStreamFrom (iterable) {
 	  if (!ReadableStream) {
-	    ReadableStream = require$$13.ReadableStream;
+	    ReadableStream = require$$14.ReadableStream;
 	  }
 
 	  if (ReadableStream.from) {
@@ -4556,7 +4556,7 @@ function requireUtil$5 () {
 
 	function isReadableStreamLike (stream) {
 	  if (!ReadableStream) {
-	    ReadableStream = require$$13.ReadableStream;
+	    ReadableStream = require$$14.ReadableStream;
 	  }
 
 	  return stream instanceof ReadableStream || (
@@ -6696,6 +6696,14 @@ function requireBody () {
 	const { File: UndiciFile } = requireFile();
 	const { parseMIMEType, serializeAMimeType } = requireDataURL();
 
+	let random;
+	try {
+	  const crypto = require('node:crypto');
+	  random = (max) => crypto.randomInt(0, max);
+	} catch {
+	  random = (max) => Math.floor(Math.random(max));
+	}
+
 	let ReadableStream = globalThis.ReadableStream;
 
 	/** @type {globalThis['File']} */
@@ -6706,7 +6714,7 @@ function requireBody () {
 	// https://fetch.spec.whatwg.org/#concept-bodyinit-extract
 	function extractBody (object, keepalive = false) {
 	  if (!ReadableStream) {
-	    ReadableStream = require$$13.ReadableStream;
+	    ReadableStream = require$$14.ReadableStream;
 	  }
 
 	  // 1. Let stream be null.
@@ -6781,7 +6789,7 @@ function requireBody () {
 	    // Set source to a copy of the bytes held by object.
 	    source = new Uint8Array(object.buffer.slice(object.byteOffset, object.byteOffset + object.byteLength));
 	  } else if (util.isFormDataLike(object)) {
-	    const boundary = `----formdata-undici-0${`${Math.floor(Math.random() * 1e11)}`.padStart(11, '0')}`;
+	    const boundary = `----formdata-undici-0${`${random(1e11)}`.padStart(11, '0')}`;
 	    const prefix = `--${boundary}\r\nContent-Disposition: form-data`;
 
 	    /*! formdata-polyfill. MIT License. Jimmy Wärting <https://jimmy.warting.se/opensource> */
@@ -6927,7 +6935,7 @@ function requireBody () {
 	function safelyExtractBody (object, keepalive = false) {
 	  if (!ReadableStream) {
 	    // istanbul ignore next
-	    ReadableStream = require$$13.ReadableStream;
+	    ReadableStream = require$$14.ReadableStream;
 	  }
 
 	  // To safely extract a body and a `Content-Type` value from
@@ -15583,7 +15591,7 @@ function requireResponse () {
 	const assert = require$$0$3;
 	const { types } = require$$0$2;
 
-	const ReadableStream = globalThis.ReadableStream || require$$13.ReadableStream;
+	const ReadableStream = globalThis.ReadableStream || require$$14.ReadableStream;
 	const textEncoder = new TextEncoder('utf-8');
 
 	// https://fetch.spec.whatwg.org/#response-class
@@ -16652,7 +16660,7 @@ function requireRequest () {
 
 	      // 2. Set finalBody to the result of creating a proxy for inputBody.
 	      if (!TransformStream) {
-	        TransformStream = require$$13.TransformStream;
+	        TransformStream = require$$14.TransformStream;
 	      }
 
 	      // https://streams.spec.whatwg.org/#readablestream-create-a-proxy
@@ -17145,7 +17153,7 @@ function requireFetch () {
 	const { Readable, pipeline } = require$$0$4;
 	const { addAbortListener, isErrored, isReadable, nodeMajor, nodeMinor } = requireUtil$6();
 	const { dataURLProcessor, serializeAMimeType } = requireDataURL();
-	const { TransformStream } = require$$13;
+	const { TransformStream } = require$$14;
 	const { getGlobalDispatcher } = requireGlobal();
 	const { webidl } = requireWebidl();
 	const { STATUS_CODES } = require$$2$1;
@@ -18815,7 +18823,7 @@ function requireFetch () {
 	  // cancelAlgorithm set to cancelAlgorithm, highWaterMark set to
 	  // highWaterMark, and sizeAlgorithm set to sizeAlgorithm.
 	  if (!ReadableStream) {
-	    ReadableStream = require$$13.ReadableStream;
+	    ReadableStream = require$$14.ReadableStream;
 	  }
 
 	  const stream = new ReadableStream(
@@ -39343,6 +39351,7 @@ async function addReaction(content) {
         throw new Error('No Issue Payload Found');
     const octokit = githubExports.getOctokit(coreExports.getInput('github_token', { required: true }));
     // If there is a comment in the payload, add the reaction to the comment.
+    // Otherwise, add it to the issue.
     const response = githubExports.context.payload.comment !== undefined
         ? await octokit.rest.reactions.createForIssueComment({
             owner: githubExports.context.repo.owner,
@@ -39371,6 +39380,7 @@ async function removeReaction(id) {
         throw new Error('No Issue Payload Found');
     const octokit = githubExports.getOctokit(coreExports.getInput('github_token', { required: true }));
     // If there is a comment in the payload, remove the reaction from the comment.
+    // Otherwise, remove it from the issue.
     if (githubExports.context.payload.comment !== undefined)
         await octokit.rest.reactions.deleteForIssueComment({
             owner: githubExports.context.repo.owner,
@@ -39389,6 +39399,8 @@ async function removeReaction(id) {
 
 /**
  * The entrypoint for the action.
+ *
+ * Determines which task to run based on the action input.
  */
 async function run() {
     // Fail if the action is being run on an unsupported event type.
@@ -39453,11 +39465,6 @@ async function run() {
             await removeReaction(initialReactionId);
             await addReaction(Reaction.THUMBS_UP);
             break;
-        default:
-            // Remove the initial reaction and add a thumbs down to indicate failure.
-            await removeReaction(initialReactionId);
-            await addReaction(Reaction.THUMBS_DOWN);
-            throw new Error(`Invalid Action: ${action}`);
     }
 }
 
