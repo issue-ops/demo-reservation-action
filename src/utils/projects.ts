@@ -1,7 +1,7 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
 import { ProjectColumnNames } from '../enums.js'
-import { GraphQlProjectsV2QueryResponse } from '../types.js'
+import type { GraphQlProjectsV2QueryResponse } from '../types.js'
 
 /**
  * Moves an issue to a different column in a project board.

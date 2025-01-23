@@ -102,10 +102,5 @@ export async function run(): Promise<void> {
       await removeReaction(initialReactionId)
       await addReaction(Reaction.THUMBS_UP)
       break
-    default:
-      // Remove the initial reaction and add a thumbs down to indicate failure.
-      await removeReaction(initialReactionId)
-      await addReaction(Reaction.THUMBS_DOWN)
-      throw new Error(`Invalid Action: ${action}`)
   }
 }
