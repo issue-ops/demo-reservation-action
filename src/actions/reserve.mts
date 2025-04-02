@@ -150,13 +150,12 @@ async function getConflictingReservations(
   )
 
   // Get the list of existing reservations from the GitHub Issues API.
-  const issues: RestEndpointMethodTypes['issues']['listForRepo']['response']['data'] =
-    await octokit.paginate(octokit.rest.issues.listForRepo, {
-      owner,
-      repo: repository,
-      state: 'open', // Open issues only; closed are considered past reservations.
-      labels: 'confirmed,reservation' // Confirmed reservations only.
-    })
+  const issues = await octokit.paginate(octokit.rest.issues.listForRepo, {
+    owner,
+    repo: repository,
+    state: 'open', // Open issues only; closed are considered past reservations.
+    labels: 'confirmed,reservation' // Confirmed reservations only.
+  })
 
   core.info(`Existing Reservations: ${issues.length}`)
 
@@ -196,5 +195,5 @@ async function getConflictingReservations(
 
   core.info(`Conflicting Reservations: ${result.length}`)
 
-  return result
+  return result as RestEndpointMethodTypes['issues']['listForRepo']['response']['data']
 }
