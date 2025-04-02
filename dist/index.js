@@ -27297,8 +27297,6 @@ function requireContext () {
 	    constructor() {
 	        var _a, _b, _c;
 	        this.payload = {};
-	        console.log('IN CONTEXT');
-	        console.log(process.env.GITHUB_EVENT_PATH);
 	        if (process.env.GITHUB_EVENT_PATH) {
 	            if ((0, fs_1.existsSync)(process.env.GITHUB_EVENT_PATH)) {
 	                this.payload = JSON.parse((0, fs_1.readFileSync)(process.env.GITHUB_EVENT_PATH, { encoding: 'utf8' }));
