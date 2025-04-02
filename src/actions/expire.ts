@@ -1,7 +1,6 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
 import { parseIssue } from '@github/issue-parser'
-import type { RestEndpointMethodTypes } from '@octokit/plugin-rest-endpoint-methods'
 import { dedent } from 'ts-dedent'
 import { ProjectColumnNames } from '../enums.js'
 import { moveIssue } from '../utils/projects.js'
@@ -29,13 +28,12 @@ export async function expire(
   )
 
   // Get the list of existing reservations from the GitHub Issues API.
-  const issues: RestEndpointMethodTypes['issues']['listForRepo']['response']['data'] =
-    await octokit.paginate(octokit.rest.issues.listForRepo, {
-      owner: github.context.repo.owner,
-      repo: github.context.repo.repo,
-      state: 'open', // Open issues only; closed are considered past reservations.
-      labels: 'reservation' // Only issues with the `reservation` label.
-    })
+  const issues = await octokit.paginate(octokit.rest.issues.listForRepo, {
+    owner: github.context.repo.owner,
+    repo: github.context.repo.repo,
+    state: 'open', // Open issues only; closed are considered past reservations.
+    labels: 'reservation' // Only issues with the `reservation` label.
+  })
 
   core.info(`Existing Reservations: ${issues.length}`)
 
