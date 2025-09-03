@@ -71,7 +71,7 @@ export async function reserve(
       owner: github.context.repo.owner,
       repo: github.context.repo.repo,
       issue_number: github.context.payload.issue!.number,
-      body: dedent`### :fire: Reservation Request Failed
+      body: dedent`### :fire: Reservation Request Failed!
 
       All available rooms of this type have been booked for the selected dates. Please modify your request and try again!`
     })
@@ -101,7 +101,7 @@ export async function reserve(
     owner: github.context.repo.owner,
     repo: github.context.repo.repo,
     issue_number: github.context.payload.issue!.number,
-    body: dedent`### :hotel: Reservation Request Confirmed
+    body: dedent`### :hotel: Reservation Request Confirmed!
 
     Hooray! Your reservation request has been confirmed! The total cost of your stay is **${matching[0].price}**. You can submit payment after conclusion of your stay, which will never happen, because this is a demo project.
 

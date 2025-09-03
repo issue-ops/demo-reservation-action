@@ -31460,7 +31460,7 @@ async function cancel(projectNumber) {
         owner: githubExports.context.repo.owner,
         repo: githubExports.context.repo.repo,
         issue_number: githubExports.context.payload.issue.number,
-        body: dedent `### :no_entry_sign: Reservation Request Cancelled
+        body: dedent `### :no_entry_sign: Reservation Request Cancelled!
 
     Your reservation request has been cancelled! We are sorry that you have chosen to cancel your stay at Bear Creek Honey Farm.
 
@@ -39169,7 +39169,7 @@ async function expire(projectNumber, issueTemplateBody) {
                 owner: githubExports.context.repo.owner,
                 repo: githubExports.context.repo.repo,
                 issue_number: issue.number,
-                body: dedent `### :calendar: Reservation Request Expired
+                body: dedent `### :calendar: Reservation Request Expired!
 
         We hope you enjoyed your fake stay! Please pretend to come back soon!
 
@@ -39243,7 +39243,7 @@ async function reserve(reservation, issueTemplateBody, projectNumber) {
             owner: githubExports.context.repo.owner,
             repo: githubExports.context.repo.repo,
             issue_number: githubExports.context.payload.issue.number,
-            body: dedent `### :fire: Reservation Request Failed
+            body: dedent `### :fire: Reservation Request Failed!
 
       All available rooms of this type have been booked for the selected dates. Please modify your request and try again!`
         });
@@ -39265,7 +39265,7 @@ async function reserve(reservation, issueTemplateBody, projectNumber) {
         owner: githubExports.context.repo.owner,
         repo: githubExports.context.repo.repo,
         issue_number: githubExports.context.payload.issue.number,
-        body: dedent `### :hotel: Reservation Request Confirmed
+        body: dedent `### :hotel: Reservation Request Confirmed!
 
     Hooray! Your reservation request has been confirmed! The total cost of your stay is **${matching[0].price}**. You can submit payment after conclusion of your stay, which will never happen, because this is a demo project.
 
