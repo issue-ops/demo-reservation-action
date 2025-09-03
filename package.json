@@ -1,7 +1,7 @@
 {
   "name": "demo-reservation-action",
   "description": "Process reservation requests for a fictional business",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "author": "Nick Alteen <ncalteen@github.com>",
   "type": "module",
   "homepage": "https://github.com/issue-ops/demo-reservation-action#readme",
