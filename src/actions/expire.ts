@@ -64,7 +64,7 @@ export async function expire(
         owner: github.context.repo.owner,
         repo: github.context.repo.repo,
         issue_number: issue.number,
-        body: dedent`### :calendar: Reservation Request Expired
+        body: dedent`### :calendar: Reservation Request Expired!
 
         We hope you enjoyed your fake stay! Please pretend to come back soon!
 

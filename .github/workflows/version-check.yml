@@ -36,7 +36,6 @@ jobs:
       # Check the version in the manifest file.
       - name: Check Version
         id: check-version
-        continue-on-error: true
         uses: issue-ops/semver@v2
         with:
           # Allow releasing prerelease versions
