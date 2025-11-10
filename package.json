@@ -51,7 +51,7 @@
   "devDependencies": {
     "@eslint/compat": "^1.4.1",
     "@github/local-action": "^6.0.2",
-    "@octokit/plugin-rest-endpoint-methods": "^16.1.0",
+    "@octokit/plugin-rest-endpoint-methods": "^17.0.0",
     "@rollup/plugin-commonjs": "^28.0.6",
     "@rollup/plugin-node-resolve": "^16.0.3",
     "@rollup/plugin-typescript": "^12.3.0",
